@@ -3,7 +3,7 @@ import {AbsoluteFill, Composition, useCurrentFrame} from 'remotion';
 import {buildTestScene} from './film/testScene';
 import {buildReferenceScene, buildTileAnimScene} from './film/editorial/reference';
 import {buildEditorialScene} from './film/editorial/film';
-import {buildReelCoverScene, COVER} from './film/editorial/reelCover';
+import {buildReelCoverScene, buildReelFrameScene, COVER} from './film/editorial/reelCover';
 import {loadFonts} from './fonts';
 import {MotionBlur} from './render/MotionBlur';
 import {SceneFrame} from './render/SceneRenderer';
@@ -29,6 +29,7 @@ const ref = buildReferenceScene();
 const tilesAnim = buildTileAnimScene();
 const film = buildEditorialScene();
 const reelCover = buildReelCoverScene();
+const reelFrame = buildReelFrameScene();
 const testMain = test.comps[test.main];
 
 export const Root: React.FC = () => (
@@ -53,6 +54,7 @@ export const Root: React.FC = () => (
     />
     <Composition id="TilesAnim" component={SceneComp} durationInFrames={tilesAnim.comps[tilesAnim.main].duration} fps={60} width={1920} height={1080} defaultProps={{scene: tilesAnim}} />
     <Composition id="ReelCover" component={SceneComp} durationInFrames={reelCover.comps[reelCover.main].duration} fps={60} width={COVER.w} height={COVER.h} defaultProps={{scene: reelCover}} />
+    <Composition id="ReelFrame" component={SceneComp} durationInFrames={1} fps={60} width={COVER.w} height={COVER.h} defaultProps={{scene: reelFrame}} />
     <Composition id="TilesRef" component={SceneComp} durationInFrames={1} fps={60} width={1920} height={1080} defaultProps={{scene: ref}} />
   </>
 );

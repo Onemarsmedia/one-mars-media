@@ -1,7 +1,7 @@
 import {circlePath} from '../../scene/builders';
 import type {Comp, Layer, Scene, ShapeItem, TextLayer} from '../../scene/types';
 import metrics from './metrics.json';
-import {cardShadow} from './shadows';
+import {cardShadow, shadowSteps} from './shadows';
 import {buildTileComps, TILE} from './tiles';
 import {C, FONT, FPS} from './tokens';
 
@@ -31,6 +31,33 @@ const txt = (name: string, s: string, x: number, y: number, font: (typeof FONT)[
 const rect = (x: number, y: number, w: number, h: number, color: string, opacity = 100): ShapeItem => ({geo: {type: 'rect', size: [w, h], center: [x + w / 2, y + h / 2]}, fill: {color, opacity}});
 const track = (px: number, size: number) => (px / size) * 1000;
 
+/** The film's tagline, red full stops. Same place on the cover and on the vertical film. */
+const headline = (): TextLayer[] => {
+  const HS = 112;
+  return [
+    txt('headline 1', 'One brief', X0 - 3, 500, FONT.anton, HS, C.ink),
+    txt('headline 1 stop', '.', X0 - 3 + 399.6, 500, FONT.anton, HS, C.red),
+    txt('headline 2', 'The whole campaign', X0 - 3, 620, FONT.anton, HS, C.ink),
+    txt('headline 2 stop', '.', X0 - 3 + 924.7, 620, FONT.anton, HS, C.red),
+  ];
+};
+
+/**
+ * Background of the vertical (9:16) film: the cover's headline, and a soft shadow around the slot where
+ * the 16:9 film plays, full width, right under the headline (FILM_SLOT). The film's own paper matches.
+ */
+export const FILM_SLOT = {x: 0, y: 672, w: 1080, h: 608};
+export function buildReelFrameScene(): Scene {
+  const {x, y, w, h} = FILM_SLOT;
+  const layers: Layer[] = [
+    {kind: 'shape', name: 'film shadow', items: shadowSteps(12, 0.2, 2.5).map(({g, a}) => rect(x - 40, y - g + 4, w + 80, h + 2 * g + 8, C.ink, a))},
+    {kind: 'shape', name: 'film paper', items: [rect(x, y, w, h, C.paper)]},
+    ...headline(),
+  ];
+  const main: Comp = {name: 'REEL FRAME', width: COVER.w, height: COVER.h, fps: FPS, duration: 1, bg: C.paper, layers};
+  return {main: main.name, comps: {[main.name]: main}, fonts: Object.values(FONT)};
+}
+
 export function buildReelCoverScene(): Scene {
   const duration = COVER.seconds * FPS;
   const comps: Record<string, Comp> = {};
@@ -46,12 +73,7 @@ export function buildReelCoverScene(): Scene {
   layers.push(txt('masthead url', 'onemarsmedia.com', X1, 336, FONT.sg600, 30, C.gr, {justify: 'right'}));
   layers.push({kind: 'shape', name: 'masthead rule', items: [rect(X0, 356, X1 - X0, 3, C.ink)]});
 
-  // headline (the film's tagline), red full stops
-  const HS = 112;
-  layers.push(txt('headline 1', 'One brief', X0 - 3, 500, FONT.anton, HS, C.ink));
-  layers.push(txt('headline 1 stop', '.', X0 - 3 + 399.6, 500, FONT.anton, HS, C.red));
-  layers.push(txt('headline 2', 'The whole campaign', X0 - 3, 620, FONT.anton, HS, C.ink));
-  layers.push(txt('headline 2 stop', '.', X0 - 3 + 924.7, 620, FONT.anton, HS, C.red));
+  layers.push(...headline());
 
   // the wall: 12 live tiles as cards (soft key shadow + contact shadow, as in the film)
   const keyShadow = cardShadow(TILE.w, TILE.h, 11, 0.22, 2.5);
