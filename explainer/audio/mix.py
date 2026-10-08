@@ -110,16 +110,24 @@ def main(cfg_path, out_dir):
     # Keep true peak under the ceiling: if the gain would push peaks over, a limiter catches the master only.
     peak_after = tp_in + gain
     # sample-peak ceiling under the true-peak target leaves room for inter-sample peaks and AAC overshoot
-    limiter = f",alimiter=limit={10 ** ((TARGET_TP - CEIL_MARGIN) / 20):.4f}:attack=5:release=50:level=disabled:latency=1" if peak_after > TARGET_TP - CEIL_MARGIN else ""
+    margin = CEIL_MARGIN
+    lim = lambda mg: f",alimiter=limit={10 ** ((TARGET_TP - mg) / 20):.4f}:attack=5:release=50:level=disabled:latency=1" if peak_after > TARGET_TP - mg else ""
 
     master = os.path.join(out_dir, "master.wav")
     # The limiter lowers loudness a little; re-measure and nudge the gain until we land on target.
-    for _ in range(4):
-        run(["ffmpeg", "-v", "error", "-y", "-i", pre, "-af", f"volume={gain:.3f}dB{limiter}", "-ar", str(RATE), "-c:a", "pcm_s24le", master])
-        i_now, _tp = measure(master)
-        if abs(i_now - TARGET_I) < 0.1 or not limiter:
+    # The limiter can overshoot on fast transients: if the true peak still lands over the target,
+    # lower its ceiling by the overshoot and go again.
+    for _round in range(4):
+        limiter = lim(margin)
+        for _ in range(4):
+            run(["ffmpeg", "-v", "error", "-y", "-i", pre, "-af", f"volume={gain:.3f}dB{limiter}", "-ar", str(RATE), "-c:a", "pcm_s24le", master])
+            i_now, tp_now = measure(master)
+            if abs(i_now - TARGET_I) < 0.1 or not limiter:
+                break
+            gain += TARGET_I - i_now
+        if tp_now <= TARGET_TP - 0.3 or not limiter:
             break
-        gain += TARGET_I - i_now
+        margin += tp_now - (TARGET_TP - 0.4)
     # stems: same gain, minus the headroom the unlimited sum (and every single stem) needs to stay
     # under the ceiling. Measured on float data: integer files would clip the overs and hide them.
     summed = os.path.join(tmp, "summed.wav")
