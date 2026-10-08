@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Explainer film project (Remotion + After Effects generator) has its own toolchain.
+    "explainer/**",
   ]),
 ]);
 
