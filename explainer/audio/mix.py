@@ -25,6 +25,7 @@ import sys
 F32 = ["-c:a", "pcm_f32le"]  # intermediate files: float, so nothing clips before the final gain is known
 TARGET_I = -14.0
 TARGET_TP = -1.0
+CEIL_MARGIN = 1.0  # dB under TARGET_TP for the limiter's sample-peak ceiling (AAC adds up to ~0.5 dB)
 RATE = 48000
 
 
@@ -108,8 +109,8 @@ def main(cfg_path, out_dir):
     gain = TARGET_I - i_in
     # Keep true peak under the ceiling: if the gain would push peaks over, a limiter catches the master only.
     peak_after = tp_in + gain
-    # sample-peak ceiling 0.6 dB under the true-peak target leaves room for inter-sample peaks
-    limiter = f",alimiter=limit={10 ** ((TARGET_TP - 0.6) / 20):.4f}:attack=5:release=50:level=disabled:latency=1" if peak_after > TARGET_TP - 0.6 else ""
+    # sample-peak ceiling under the true-peak target leaves room for inter-sample peaks and AAC overshoot
+    limiter = f",alimiter=limit={10 ** ((TARGET_TP - CEIL_MARGIN) / 20):.4f}:attack=5:release=50:level=disabled:latency=1" if peak_after > TARGET_TP - CEIL_MARGIN else ""
 
     master = os.path.join(out_dir, "master.wav")
     # The limiter lowers loudness a little; re-measure and nudge the gain until we land on target.

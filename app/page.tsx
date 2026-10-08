@@ -48,7 +48,7 @@ export default function Home() {
         <section id="explainer" aria-labelledby="explainer-title" className="pb-24 px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
             <h2 id="explainer-title" className="text-sm font-normal uppercase tracking-[0.35em] text-gray-500 mb-6 text-center">
-              Onemarsmedia in 40 seconds
+              Onemarsmedia in 42 seconds
             </h2>
             <ExplainerVideo />
           </div>

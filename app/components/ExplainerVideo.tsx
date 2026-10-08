@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-// 40-second explainer: poster frame with a play button; one click starts it with sound.
-// Files are versioned (public/ is served without long caching), so a new cut ships as -v3.
-const SRC = '/video/onemarsmedia-360-v2.mp4';
-const POSTER = '/video/onemarsmedia-360-poster-v2.webp';
-const CAPTIONS = '/video/onemarsmedia-360-v2.en.vtt';
+// 42-second explainer: poster frame with a play button; one click starts it with sound.
+// Files are versioned (public/ is served without long caching), so a new cut ships as -v4.
+const SRC = '/video/onemarsmedia-360-v3.mp4';
+const POSTER = '/video/onemarsmedia-360-poster-v3.webp';
+const CAPTIONS = '/video/onemarsmedia-360-v3.en.vtt';
 
 export default function ExplainerVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -60,7 +60,7 @@ export default function ExplainerVideo() {
               <path d="M8 5.5v13l11-6.5z" />
             </svg>
             <span className="text-sm font-semibold sm:text-base">
-              Watch · 0:40<span className="sr-only"> the Onemarsmedia explainer, 40 seconds, with sound</span>
+              Watch · 0:42<span className="sr-only"> the Onemarsmedia explainer, 42 seconds, with sound</span>
             </span>
           </span>
           {failed && (
