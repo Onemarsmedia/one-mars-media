@@ -180,7 +180,9 @@ const result = await page.evaluate(() => {
           if (!c.bounds.contains(f.bounds)) f = f.intersect(c, {insert: false});
         }
         const geo = exportPath(f);
-        if (geo.length && Math.abs(f.area || 0) > 0.01) out.fill = {geo, color: fill, opacity: r3(fillOpacity)};
+        // compound paths: sum the parts (mirrored parts have opposite winding and would cancel out)
+        const area = f instanceof paper.CompoundPath ? f.children.reduce((a, p) => a + Math.abs(p.area || 0), 0) : Math.abs(f.area || 0);
+        if (geo.length && area > 0.01) out.fill = {geo, color: fill, opacity: r3(fillOpacity)};
       }
       if (stroke && strokeOpacity > 0 && strokeWidth > 0) {
         let s = base.clone({insert: false});

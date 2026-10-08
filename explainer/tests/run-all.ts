@@ -213,6 +213,25 @@ function roundTrip(scene: Scene, label: string) {
   }
 }
 
+section('AE script guards: version, fonts, audio', () => {
+  const scene = buildTestScene();
+  const {jsx} = emitJsx(scene);
+  const files = (scene.audio ?? []).map((a) => `/package/audio/${a.file}`);
+  const fonts = scene.fonts.map((f) => f.postscript);
+  const built = (r: MockRun) => r.alerts.some((a) => a.startsWith('Onemarsmedia 360 project built'));
+  const old = runJsx(jsx, {existingFiles: files, aeVersion: '22.6x61'});
+  check(old.comps.length === 0 && old.alerts.some((a) => a.includes('2023')), 'AE 22 is refused before building');
+  const missing = fonts.slice(1);
+  const declined = runJsx(jsx, {existingFiles: files, installedFonts: missing, confirm: false});
+  check(!built(declined) && !declined.alerts.some((a) => a.startsWith('Build stopped')), 'missing font + "no": stops quietly');
+  const accepted = runJsx(jsx, {existingFiles: files, installedFonts: missing, confirm: true});
+  const last = accepted.alerts[accepted.alerts.length - 1] ?? '';
+  check(built(accepted) && last.includes('substituted') && last.includes(fonts[0]), `missing font + "yes": built, reports ${fonts[0]}`);
+  const film = buildEditorialScene();
+  const noAudio = runJsx(emitJsx(film).jsx, {existingFiles: []});
+  const lastA = noAudio.alerts[noAudio.alerts.length - 1] ?? '';
+  check(built(noAudio) && lastA.includes('Audio not found') && lastA.includes(film.audio![0].file), 'missing audio is reported as audio');
+});
 section('AE round trip: test scene', () => roundTrip(buildTestScene(), 'test scene'));
 section('AE round trip: Editorial film (every frame)', () => roundTrip(buildEditorialScene(), 'film'));
 

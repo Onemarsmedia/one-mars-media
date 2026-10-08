@@ -55,6 +55,9 @@ export class Shape {
   closed = true;
 }
 
+/** Fonts installed in the mock AE (null = all). Set by runJsx. */
+let INSTALLED: Set<string> | null = null;
+
 export class TextDocument {
   text: string;
   font = 'ArialMT';
@@ -165,9 +168,13 @@ export class MockProperty extends Base {
     if (this.matchName.startsWith('ADBE Position_') && !(this.parentProperty!.property('ADBE Position') as MockProperty & {separated?: boolean}).separated)
       fail(`${this.path()}: X/Y position used while dimensions are not separated`);
   }
-  /** Real AE hands out copies of TextDocuments; store copies so later edits don't leak into keys. */
+  /** Real AE hands out copies of TextDocuments; store copies so later edits don't leak into keys.
+   *  A font that is not installed is not kept (AE leaves the default font in place). */
   private own(v: unknown) {
-    return v instanceof TextDocument ? Object.assign(new TextDocument(v.text), v) : v;
+    if (!(v instanceof TextDocument)) return v;
+    const td = Object.assign(new TextDocument(v.text), v);
+    if (INSTALLED && !INSTALLED.has(td.font)) td.font = 'ArialMT';
+    return td;
   }
   setValue(v: unknown) {
     this.checkSettable();
@@ -373,6 +380,18 @@ export class MockLayer {
   private _in = 0;
   private _out: number;
   trackMatte: {layer: MockLayer; type: number} | null = null;
+  motionBlur = false;
+  private _audio = true;
+  get audioEnabled() {
+    return this._audio;
+  }
+  set audioEnabled(v: boolean) {
+    if (this.kind !== 'footage') fail(`${this.name}: audioEnabled set on a layer without audio`);
+    this._audio = v;
+  }
+  get hasVideo() {
+    return this.kind !== 'footage';
+  }
   private _collapse = false;
   get collapseTransformation() {
     return this._collapse;
@@ -496,6 +515,39 @@ export class MockComp {
   parentFolder: MockFolder | null = null;
   markerProperty: MockProperty;
   opened = false;
+  motionBlur = false;
+  private _shutterAngle = 180;
+  private _shutterPhase = -90;
+  private _mbSamples = 16;
+  get shutterAngle() {
+    return this._shutterAngle;
+  }
+  set shutterAngle(v: number) {
+    if (!(v >= 0 && v <= 720)) fail(`comp ${this.name}: shutterAngle 0..720`);
+    this._shutterAngle = v;
+  }
+  get shutterPhase() {
+    return this._shutterPhase;
+  }
+  set shutterPhase(v: number) {
+    if (!(v >= -360 && v <= 360)) fail(`comp ${this.name}: shutterPhase -360..360`);
+    this._shutterPhase = v;
+  }
+  get motionBlurSamplesPerFrame() {
+    return this._mbSamples;
+  }
+  set motionBlurSamplesPerFrame(v: number) {
+    if (!(Number.isInteger(v) && v >= 2 && v <= 64)) fail(`comp ${this.name}: motionBlurSamplesPerFrame 2..64`);
+    this._mbSamples = v;
+  }
+  get numLayers() {
+    return this.layerList.length;
+  }
+  layer(i: number) {
+    const l = this.layerList[i - 1];
+    if (!l) fail(`comp ${this.name}: no layer ${i}`);
+    return l;
+  }
   constructor(
     public name: string,
     public width: number,
@@ -523,7 +575,10 @@ export interface MockRun {
   folders: MockFolder[];
 }
 
-export function runJsx(jsx: string, opts: {scriptPath?: string; existingFiles?: string[]; installedFonts?: string[]} = {}): MockRun {
+export function runJsx(
+  jsx: string,
+  opts: {scriptPath?: string; existingFiles?: string[]; installedFonts?: string[]; aeVersion?: string; confirm?: boolean} = {},
+): MockRun {
   const comps: MockComp[] = [];
   const alerts: string[] = [];
   const footage: MockFootage[] = [];
@@ -546,6 +601,9 @@ export function runJsx(jsx: string, opts: {scriptPath?: string; existingFiles?: 
     constructor(public file: File) {}
   }
   const project = {
+    numItems: 0,
+    bitsPerChannel: 16,
+    linearBlending: true,
     items: {
       addComp(name: string, w: number, h: number, par: number, dur: number, fps: number) {
         const c = new MockComp(name, w, h, par, dur, fps);
@@ -567,13 +625,17 @@ export function runJsx(jsx: string, opts: {scriptPath?: string; existingFiles?: 
     },
   };
   const fonts = new Set(opts.installedFonts ?? []);
+  INSTALLED = opts.installedFonts ? new Set([...fonts, 'ArialMT']) : null;
   const sandbox = {
     app: {
       project,
-      newProject() {},
+      version: opts.aeVersion ?? '25.2x15',
+      newProject() {
+        return project;
+      },
       beginUndoGroup() {},
       endUndoGroup() {},
-      fonts: {getFontsByPostScriptName: (n: string) => (opts.installedFonts === undefined || fonts.has(n) ? [{}] : [])},
+      fonts: {getFontsByPostScriptName: (n: string) => (opts.installedFonts === undefined || fonts.has(n) ? [{isSubstitute: false}] : [{isSubstitute: true}])},
     },
     $: {fileName: scriptPath},
     File,
@@ -587,6 +649,10 @@ export function runJsx(jsx: string, opts: {scriptPath?: string; existingFiles?: 
     ParagraphJustification: {LEFT_JUSTIFY: 7413, RIGHT_JUSTIFY: 7414, CENTER_JUSTIFY: 7415},
     TrackMatteType: {ALPHA: 1, ALPHA_INVERTED: 2},
     alert: (m: string) => alerts.push(String(m)),
+    confirm: (m: string) => {
+      alerts.push(`confirm: ${m}`);
+      return opts.confirm ?? true;
+    },
   };
   vm.runInNewContext(jsx, sandbox, {filename: 'build.jsx'});
   return {comps, alerts, footage, folders};

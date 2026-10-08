@@ -47,7 +47,7 @@ Big Shoulders Display was tested and rejected: the variable instance renders ove
 ## Tile drawing language
 - **Printed flat graphics.** Hard-edged rectangles, no rounded corners on tiles, frames, phones or browser windows. No shadows, no gradients. Square caps and mitre joins.
 - Strokes are 2.5–4.5 u in a 400×280 art space (≈1.8–3.2 px at grid size). Mini-UIs use ink, paper, paper-2 and soft, plus **one red element per tile** (REC dot, playhead, highlight, CTA, keyframe dot, selected variation).
-- Real words appear inside the UIs (REC, 00:00:09:14, TITLE, EP. 01, POST IT / TOSS IT, Culvo, 16:9…) because they make each tile recognisable in under a second.
+- Real words appear inside the UIs (REC, 00:00:09:14, TITLE, EP. 01, POST IT / TOSS IT, LAUNCH, 16:9…) because they make each tile recognisable in under a second.
 - **Campaign key visual.** A red disc rising over an ink horizon ramp is the client artwork. It recurs in Concept (moodboard), Storyboard (end frame), Design (poster), Social (post), Web (hero), Apps (swipe card), AI (4 variations) and Distribution (the same art in 16:9, 9:16, 1:1 and 4:5). FILMING's set uses the same disc as its backdrop. This shared motif is what makes 12 tiles read as **one campaign**.
 - Three tile states:
   - **Empty / reserved:** a 2 px graphite rule, an outline number, a graphite label, and a panel of 45° graphite hatch hairlines (14 u pitch, 32 %) inside a 1.5 px frame. It reads as a print knock-out area waiting for its plate. No X placeholder: on a website poster frame an X-in-a-box reads as a broken image.
@@ -65,7 +65,27 @@ Big Shoulders Display was tested and rejected: the variable instance renders ove
 3. **Split-flap seam.** A paper-coloured bar cuts through the digits at half cap-height. It is the hinge of the flap.
 4. **Ruler.** 12 segments, one per tile, 30° each, so 12 × 30° = 360°. Segments go ink as tiles go live, red for the active one, and stay hairline while waiting. The tile tags "+30°" and the f2 contents list (030°…360°) repeat the same arithmetic.
 
-## Motion signature: "print shop, not camera rig"
+## Motion v2: "one camera, one page" (supersedes the v1 signature below)
+Client feedback on v1: the look is right, but the hard cuts feel choppy and stiff. v2 keeps the palette,
+type, grid, tiles and 360° device, and changes only how things move. 40 s, 60 fps, motion blur (180°).
+- **One continuous camera, no cuts.** Brief, grid, band and end card are one page (`WORLD`). A camera null
+  drifts slowly between eased moves: row 1 left → push into the FILMING hero on the 90° hit → row 1 right →
+  the counter on "That's halfway" → row 2 left (with the status line) → row 2 right → push into DISTRIBUTION
+  on the 360° hit → one pull-back to the full wall on "That's three-sixty". Only the masthead and the two
+  contents columns are fixed to the screen; the columns slide in from the right.
+- **Break-apart.** The typed headline is cut into a 6×2 grid of slices that fly to the 12 tile slots on
+  "...and one team"; each slice dissolves into its hatched reserved slot.
+- **Easing.** Smooth in-out on camera moves and fades; entrances rise 10–26 px with a soft settle; wipes keep
+  the rectangular mask language (rules left→right, panels top→bottom) but ease in and out. The active (red)
+  tile and ruler segment dissolve into their done state.
+- **Counter.** Counts up +30° over 0.35 s on each tile (0.5 s for the 360° lock). Tiles 3, 6, 9 and 12 land
+  on the counter hits, so the counter, ruler, "N of 12" and the tile always agree.
+- **Micro-loops.** REC blinks and the timecode runs (Filming), the playheads glide (Editing, Podcast), the
+  prompt cursor blinks (AI).
+- **End card.** Tiles lift off right-to-left, the status line fades, the contents list cascades in, the
+  wordmark and "One team." / "No limits." wipe on with the voice, the red full stops rise in last.
+
+## Motion signature v1: "print shop, not camera rig"
 - **Grammar: hard cuts on the beat.** No dissolves, blurs, floating or slow push-ins. Every VO stress or music downbeat is a cut or a snap. The layout re-composes on the cut, like turning a magazine page.
 - **Easing.** Mechanical and decisive. Moves last 4–8 frames with a strong ease-out (AE: incoming influence 85–90 %, outgoing 0 %), and things *arrive and stop*. **No springs, bounce or overshoot.** The only "life" is stepped: hold keyframes and 2-frame staggers.
 - **Rectangular mask wipes** are the transition primitive. Panels, rules, the index highlight and the type column all reveal with axis-aligned rect masks: left→right for rules, top→bottom for panels.

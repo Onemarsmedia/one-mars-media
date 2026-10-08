@@ -2,7 +2,9 @@
 """Mix VO + music + SFX to -14 LUFS (true peak -1 dBTP) and export matching stems for After Effects.
 
 Music is ducked under the voice with a sidechain compressor. The loudness gain is measured once on the
-summed mix and then applied identically to every stem, so in AE the stems at 0 dB add up to the master.
+summed mix and the master is limited to the true-peak ceiling. The stems get the same gain minus the
+headroom their unlimited sum needs, so in AE they add up to the master's balance without clipping
+(about the master's loudness minus that headroom; the limited master ships alongside as the final mix).
 
 Usage: python3 -I mix.py mix.json out_dir
 mix.json: {
@@ -113,11 +115,16 @@ def main(cfg_path, out_dir):
         if abs(i_now - TARGET_I) < 0.1 or not limiter:
             break
         gain += TARGET_I - i_now
+    # stems: same gain, minus the headroom the unlimited sum needs to stay under the ceiling
+    summed = os.path.join(tmp, "summed.wav")
+    run(["ffmpeg", "-v", "error", "-y", "-i", pre, "-af", f"volume={gain:.3f}dB", "-ar", str(RATE), "-c:a", "pcm_s24le", summed])
+    _i, tp_sum = measure(summed)
+    stem_gain = gain - max(0.0, tp_sum - TARGET_TP)
     for s in stems:
         name = os.path.basename(s)
-        run(["ffmpeg", "-v", "error", "-y", "-i", s, "-af", f"volume={gain:.3f}dB", "-ar", str(RATE), "-c:a", "pcm_s24le", os.path.join(out_dir, "stems", name)])
+        run(["ffmpeg", "-v", "error", "-y", "-i", s, "-af", f"volume={stem_gain:.3f}dB", "-ar", str(RATE), "-c:a", "pcm_s24le", os.path.join(out_dir, "stems", name)])
     i_out, tp_out = measure(master)
-    report = {"premix_lufs": i_in, "gain_db": round(gain, 2), "limited": bool(limiter), "master_lufs": i_out, "master_true_peak": tp_out}
+    report = {"premix_lufs": i_in, "gain_db": round(gain, 2), "stem_gain_db": round(stem_gain, 2), "limited": bool(limiter), "master_lufs": i_out, "master_true_peak": tp_out}
     json.dump(report, open(os.path.join(out_dir, "loudness.json"), "w"), indent=1)
     for f in os.listdir(tmp):
         os.remove(os.path.join(tmp, f))

@@ -11,8 +11,13 @@ import {aeTransform, multiply, toSvg, type Mat} from './matrix';
 //   - precomps are clipped to their own frame
 // Any change here must be mirrored in ae/emit-jsx.ts (and vice versa).
 
-let idCounter = 0;
-const nextId = (p: string) => `${p}${++idCounter}`;
+// SVG ids are document-global and motion blur renders several frames into one page, so every
+// SceneFrame gets its own id namespace through context.
+const IdContext = React.createContext<{prefix: string; n: number}>({prefix: 'x', n: 0});
+function useNextId() {
+  const ids = React.useContext(IdContext);
+  return (p: string) => `${ids.prefix}${p}${++ids.n}`;
+}
 
 export function pathToD(p: PathData): string {
   const n = p.v.length;
@@ -187,22 +192,27 @@ function LayerContent({scene, comp, layer, t}: {scene: Scene; comp: Comp; layer:
       if (!sub) throw new Error(`Missing comp ${layer.comp}`);
       const content = <CompContent scene={scene} comp={sub} t={t - (layer.startTime ?? 0)} isPrecomp />;
       if (layer.collapse) return content;
-      const clip = nextId('clip');
-      return (
-        <>
-          <clipPath id={clip}>
-            <rect x={0} y={0} width={sub.width} height={sub.height} />
-          </clipPath>
-          <g clipPath={`url(#${clip})`}>{content}</g>
-        </>
-      );
+      return <ClippedPrecomp w={sub.width} h={sub.height}>{content}</ClippedPrecomp>;
     }
     case 'null':
       return null;
   }
 }
 
+function ClippedPrecomp({w, h, children}: {w: number; h: number; children: React.ReactNode}) {
+  const clip = useNextId()('clip');
+  return (
+    <>
+      <clipPath id={clip}>
+        <rect x={0} y={0} width={w} height={h} />
+      </clipPath>
+      <g clipPath={`url(#${clip})`}>{children}</g>
+    </>
+  );
+}
+
 function RenderedLayer({scene, comp, layer, t}: {scene: Scene; comp: Comp; layer: Layer; t: number}) {
+  const nextId = useNextId();
   const m = layerMatrix(comp, layer, t);
   const opacity = evalNumber(layer.transform?.opacity, t, 100, compLinkCtx(comp)) / 100;
   const filterId = layer.effects?.length ? nextId('fx') : null;
@@ -218,6 +228,7 @@ function RenderedLayer({scene, comp, layer, t}: {scene: Scene; comp: Comp; layer
 }
 
 export function CompContent({scene, comp, t, isPrecomp}: {scene: Scene; comp: Comp; t: number; isPrecomp?: boolean}) {
+  const nextId = useNextId();
   // AE renders a comp's background colour only for the top-level comp, never inside a precomp.
   return (
     <>
@@ -265,12 +276,14 @@ export function CompContent({scene, comp, t, isPrecomp}: {scene: Scene; comp: Co
   );
 }
 
-export function SceneFrame({scene, compName, t}: {scene: Scene; compName?: string; t: number}) {
+export function SceneFrame({scene, compName, t, idPrefix = 'f'}: {scene: Scene; compName?: string; t: number; idPrefix?: string}) {
   const comp = scene.comps[compName ?? scene.main];
-  idCounter = 0;
+  const ids = {prefix: idPrefix, n: 0};
   return (
-    <svg width={comp.width} height={comp.height} viewBox={`0 0 ${comp.width} ${comp.height}`} xmlns="http://www.w3.org/2000/svg" style={{display: 'block'}}>
-      <CompContent scene={scene} comp={comp} t={t} />
-    </svg>
+    <IdContext.Provider value={ids}>
+      <svg width={comp.width} height={comp.height} viewBox={`0 0 ${comp.width} ${comp.height}`} xmlns="http://www.w3.org/2000/svg" style={{display: 'block'}}>
+        <CompContent scene={scene} comp={comp} t={t} />
+      </svg>
+    </IdContext.Provider>
   );
 }

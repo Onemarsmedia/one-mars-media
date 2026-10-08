@@ -188,11 +188,16 @@ class Emitter {
       );
     }
     for (const name of order) this.emitComp(s.comps[name], name === s.main);
+    const mb = s.comps[s.main].motionBlur;
+    if (mb) {
+      for (const name of order) this.out(`motionBlur(COMPS[${jsStr(name)}], ${num(mb.shutterAngle)}, ${num(-mb.shutterAngle / 2)}, ${Math.max(16, mb.samples * 2)});`);
+    }
     if (s.audio?.length) {
       const main = s.comps[s.main];
-      for (const a of s.audio) this.out(`addAudio(COMPS[${jsStr(s.main)}], ${jsStr(a.file)}, ${jsStr(a.name)}, ${num(a.start / main.fps)}, ${num(a.gainDb ?? 0)});`);
+      for (const a of s.audio) this.out(`addAudio(COMPS[${jsStr(s.main)}], ${jsStr(a.file)}, ${jsStr(a.name)}, ${num(a.start / main.fps)}, ${num(a.gainDb ?? 0)}, ${a.muted ? 'false' : 'true'});`);
     }
     this.out(`finish(COMPS[${jsStr(s.main)}]);`);
+    this.out('BUILT = true;');
     this.out(POSTLUDE);
     return {jsx: this.lines.join('\n'), manifest: this.manifest};
   }
@@ -438,6 +443,7 @@ export function validateScene(scene: Scene) {
     };
     for (const l of c.layers) {
       checkLinks(`${c.name}/${l.name}`, l);
+      if (l.name.includes('/')) throw new Error(`${c.name}/${l.name}: "/" is reserved in layer names (property paths)`);
       if ((l.in ?? 0) >= (l.out ?? c.duration)) throw new Error(`${c.name}/${l.name}: empty time range (in ${l.in ?? 0} >= out ${l.out ?? c.duration})`);
       if (l.parent && !names.has(l.parent)) throw new Error(`${c.name}/${l.name}: parent ${l.parent} not found`);
       if (l.matte && !names.has(l.matte.layer)) throw new Error(`${c.name}/${l.name}: matte ${l.matte.layer} not found`);
@@ -464,12 +470,21 @@ export function validateScene(scene: Scene) {
 const PRELUDE = String.raw`// Onemarsmedia 360 explainer: builds the full After Effects project.
 // HOW TO USE: After Effects > File > Scripts > Run Script File... > pick this file.
 // Keep the "audio" and "fonts" folders next to this script. Install the fonts first (double-click them).
-// Then File > Save As to keep the project. Every layer, shape and keyframe is editable.
+// Then File > Save As > Save As... to keep the project. Every layer, shape and keyframe is editable.
+// Needs After Effects 2023 (23.0) or newer.
 (function () {
+if (parseFloat(app.version) < 23) { alert("This script needs After Effects 2023 (23.0) or newer."); return; }
 var SCRIPT_DIR = new File($.fileName).parent;
 var COMPS = {};
 var MISSING_FONTS = [];
-if (!app.project) app.newProject();
+var MISSING_AUDIO = [];
+var BUILT = false;
+if (app.project.numItems > 0 && confirm("Build the Onemarsmedia 360 project into a new, empty project? (recommended)")) {
+  if (!app.newProject()) return;
+}
+// match the MP4: 8 bpc, sRGB blending
+app.project.bitsPerChannel = 8;
+app.project.linearBlending = false;
 app.beginUndoGroup("Build Onemarsmedia 360");
 try {
 var ROOT_FOLDER = app.project.items.addFolder("Onemarsmedia 360");
@@ -480,14 +495,23 @@ var AUDIO_FOLDER = null;
 
 var IT = {L: KeyframeInterpolationType.LINEAR, B: KeyframeInterpolationType.BEZIER, H: KeyframeInterpolationType.HOLD};
 
+function fontOk(ps) {
+  try {
+    if (app.fonts && app.fonts.getFontsByPostScriptName) {
+      var f = app.fonts.getFontsByPostScriptName(ps);
+      for (var i = 0; i < f.length; i++) if (!f[i].isSubstitute) return true;
+      return false;
+    }
+  } catch (e) {}
+  return true;
+}
+function noteFont(ps) {
+  for (var i = 0; i < MISSING_FONTS.length; i++) if (MISSING_FONTS[i] === ps) return;
+  MISSING_FONTS.push(ps);
+}
 function checkFonts(list) {
-  for (var i = 0; i < list.length; i++) {
-    var ok = true;
-    try {
-      if (app.fonts && app.fonts.getFontsByPostScriptName) ok = app.fonts.getFontsByPostScriptName(list[i]).length > 0;
-    } catch (e) { ok = true; }
-    if (!ok) MISSING_FONTS.push(list[i]);
-  }
+  for (var i = 0; i < list.length; i++) if (!fontOk(list[i])) noteFont(list[i]);
+  if (MISSING_FONTS.length && !confirm("These fonts are not installed:\n" + MISSING_FONTS.join("\n") + "\n\nInstall them from the fonts folder, restart After Effects and run the script again.\nBuild anyway with substitute fonts?")) throw new Error("ABORT");
 }
 function mkComp(name, w, h, dur, fps, bg, folder) {
   var c = app.project.items.addComp(name, w, h, 1, dur, fps);
@@ -638,8 +662,8 @@ function setText(l, font, size, rgb, tracking, leading, just, fill, strokeRgb, s
   td.resetParagraphStyle();
   td.font = font;
   td.fontSize = size;
-  td.applyFill = fill;
   td.fillColor = rgb;
+  td.applyFill = fill;
   if (strokeRgb) {
     td.applyStroke = true;
     td.strokeColor = strokeRgb;
@@ -653,6 +677,7 @@ function setText(l, font, size, rgb, tracking, leading, just, fill, strokeRgb, s
   td.justification = just === "C" ? ParagraphJustification.CENTER_JUSTIFY : (just === "R" ? ParagraphJustification.RIGHT_JUSTIFY : ParagraphJustification.LEFT_JUSTIFY);
   td.text = txt;
   textProp(l).setValue(td);
+  if (textProp(l).value.font !== font) noteFont(font);
 }
 function setTextExpr(l, expr) { textProp(l).expression = expr; }
 function setTextKeys(l, keys) {
@@ -691,9 +716,9 @@ function addMarker(comp, t, label, dur) {
   if (dur > 0) mv.duration = dur;
   comp.markerProperty.setValueAtTime(t, mv);
 }
-function addAudio(comp, file, name, start, gainDb) {
+function addAudio(comp, file, name, start, gainDb, on) {
   var f = new File(SCRIPT_DIR.fsName + "/audio/" + file);
-  if (!f.exists) { MISSING_FONTS.push("(audio missing) " + file); return; }
+  if (!f.exists) { MISSING_AUDIO.push(file); return; }
   if (!AUDIO_FOLDER) { AUDIO_FOLDER = app.project.items.addFolder("Audio"); AUDIO_FOLDER.parentFolder = ROOT_FOLDER; }
   var item = app.project.importFile(new ImportOptions(f));
   item.parentFolder = AUDIO_FOLDER;
@@ -701,7 +726,18 @@ function addAudio(comp, file, name, start, gainDb) {
   al.name = name;
   al.startTime = start;
   if (gainDb !== 0) al.property("ADBE Audio Group").property("ADBE Audio Levels").setValue([gainDb, gainDb]);
+  al.audioEnabled = on;
   al.moveToEnd();
+}
+function motionBlur(comp, angle, phase, samples) {
+  comp.motionBlur = true;
+  comp.shutterAngle = angle;
+  comp.shutterPhase = phase;
+  comp.motionBlurSamplesPerFrame = samples;
+  for (var i = 1; i <= comp.numLayers; i++) {
+    var l = comp.layer(i);
+    if (l.hasVideo) l.motionBlur = true;
+  }
 }
 function finish(main) {
   main.openInViewer();
@@ -710,10 +746,14 @@ function finish(main) {
 
 const POSTLUDE = String.raw`
 } catch (err) {
-  alert("Build stopped: " + err.toString() + (err.line ? " (script line " + err.line + ")" : ""));
+  if (err.message !== "ABORT") alert("Build stopped: " + err.toString() + (err.line ? " (script line " + err.line + ")" : "") + "\nEdit > Undo removes the partial build.");
 }
 app.endUndoGroup();
-if (MISSING_FONTS.length) alert("Project built. Install these and reopen the project:\n" + MISSING_FONTS.join("\n"));
-else alert("Onemarsmedia 360 project built. File > Save As to keep it.");
+if (BUILT) {
+  var msg = "Onemarsmedia 360 project built.";
+  if (MISSING_FONTS.length) msg += "\n\nThese fonts were substituted:\n" + MISSING_FONTS.join("\n") + "\nInstall them from the fonts folder, restart After Effects and run the script again in a new project (reopening will not fix the text).";
+  if (MISSING_AUDIO.length) msg += "\n\nAudio not found (keep the audio folder next to the script):\n" + MISSING_AUDIO.join("\n");
+  alert(msg + "\n\nFile > Save As > Save As... to keep it.");
+}
 })();
 `;

@@ -101,6 +101,31 @@ const isHeader = (it: ArtItem) => {
   return Math.max(...ys) <= TILE.head + 0.5;
 };
 
+/**
+ * Micro-loops that keep a live tile moving (item / text indices into its drawing; same in the active look).
+ *   blink    - items switch on/off every half period (stepped)
+ *   drift    - items glide right by dx px from the moment the tile lands to the end of the film
+ *   timecode - a text counts frames at `rate` fps from its drawn value
+ */
+type Loop = {kind: 'blink'; items: number[]; period: number} | {kind: 'drift'; items: number[]; dx: number} | {kind: 'timecode'; text: number; rate: number};
+const LOOPS: Record<string, Loop[]> = {
+  filming: [
+    {kind: 'blink', items: [20], period: 1},
+    {kind: 'timecode', text: 4, rate: 25},
+  ],
+  editing: [{kind: 'drift', items: [132, 133], dx: 52}],
+  podcast: [{kind: 'drift', items: [83, 84], dx: 48}],
+  ai: [{kind: 'blink', items: [5], period: 0.8}],
+};
+
+/** "00:00:09:14" + n frames at `rate` fps. */
+function addFrames(tc: string, n: number, rate: number): string {
+  const [h, m, sec, fr] = tc.split(':').map(Number);
+  const total = ((h * 60 + m) * 60 + sec) * rate + fr + n;
+  const p = (v: number) => String(v).padStart(2, '0');
+  return `${p(Math.floor(total / (rate * 3600)))}:${p(Math.floor(total / (rate * 60)) % 60)}:${p(Math.floor(total / rate) % 60)}:${p(total % rate)}`;
+}
+
 export interface TileTiming {
   /** Frame the tile comes alive (local tile-comp time = film time). */
   on: number;
@@ -115,11 +140,14 @@ export function buildTileComp(i: number, duration: number, fps: number, timing?:
   const pre = `${num} ${name}`;
   const on = timing?.on ?? 0;
   const off = timing?.activeOff ?? 0;
-  const WIPE_RULE = 4;
-  const WIPE_PANEL = 5;
+  const WIPE_RULE = Math.round(0.28 * fps);
+  const WIPE_PANEL = Math.round(0.4 * fps);
+  const FADE = Math.round(0.3 * fps); // active (red) look dissolves into the live look
   const layers: Layer[] = [];
   const panelMatte = `${pre} | panel wipe`;
-  const ease: [number, number, number, number] = [0.05, 0.9, 0.12, 1]; // decisive ease-out, no overshoot
+  const ease: [number, number, number, number] = [0.45, 0, 0.15, 1]; // smooth in, long soft landing
+  const ruleEase: [number, number, number, number] = [0.25, 0.6, 0.2, 1];
+  const fadeOut = (base = 100): Num => ({keys: [{t: off, v: base, ease: [0.4, 0, 0.6, 1]}, {t: off + FADE, v: 0}]});
 
   // EMPTY look (reserved slot) until the panel has wiped on
   if (timing) {
@@ -143,31 +171,92 @@ export function buildTileComp(i: number, duration: number, fps: number, timing?:
     ? off > on
       ? [
           ['live', on, undefined],
-          ['active', on, off],
+          ['active', on, off + FADE],
         ]
       : [['live', on, undefined]]
     : [['live', 0, undefined]];
   for (const [look, inF, outF] of looks) {
     const L = a[look];
     const lbl = look === 'active' ? 1 : 9;
-    layers.push({kind: 'shape', name: `${pre} | ${look} panel`, items: lookItems(L.items, (it) => !isHeader(it)), in: inF, out: outF, matte: {layer: panelMatte, type: 'alpha'}, label: lbl});
-    L.texts
-      .filter((t) => t.y > TILE.head)
-      .forEach((t, k) => layers.push({...textLayer(t, `${pre} | ${look} text ${k + 1}`), in: inF, out: outF, matte: {layer: panelMatte, type: 'alpha'}, label: lbl}));
+    const fades = look === 'active' && timing;
+    const withFade = (tl: TextLayer): TextLayer =>
+      fades ? {...tl, transform: {...tl.transform, opacity: fadeOut(typeof tl.transform?.opacity === 'number' ? tl.transform.opacity : 100)}} : tl;
+    const loops = timing ? (LOOPS[key] ?? []) : [];
+    const loopItems = new Set(loops.flatMap((lp) => (lp.kind === 'timecode' ? [] : lp.items)));
+    const loopTexts = new Set(loops.flatMap((lp) => (lp.kind === 'timecode' ? [lp.text] : [])));
+    const end = outF ?? duration;
+    layers.push({
+      kind: 'shape',
+      name: `${pre} | ${look} panel`,
+      items: lookItems(
+        L.items.filter((_, k) => !loopItems.has(k)),
+        (it) => !isHeader(it),
+      ),
+      in: inF,
+      out: outF,
+      matte: {layer: panelMatte, type: 'alpha'},
+      label: lbl,
+      transform: fades ? {opacity: fadeOut()} : undefined,
+    });
+    L.texts.forEach((t, k) => {
+      if (t.y <= TILE.head) return;
+      const tl = withFade(textLayer(t, `${pre} | ${look} text ${k + 1}`));
+      if (loopTexts.has(k)) {
+        const lp = loops.find((x) => x.kind === 'timecode' && x.text === k) as Extract<Loop, {kind: 'timecode'}>;
+        const keys: Array<{t: number; v: string; ease?: 'hold'}> = [];
+        for (let n = 0, t0 = inF; t0 < end; n++, t0 = inF + Math.round((n * fps) / lp.rate)) keys.push({t: t0, v: addFrames(t.text, n, lp.rate), ease: 'hold'});
+        delete keys[keys.length - 1].ease;
+        tl.source = {kind: 'keyed', keys};
+      }
+      layers.push({...tl, in: inF, out: outF, matte: {layer: panelMatte, type: 'alpha'}, label: lbl});
+    });
+    // micro-loops: their items on their own layers, above the panel
+    for (const lp of loops) {
+      if (lp.kind === 'timecode') continue;
+      const tr: Layer['transform'] = {};
+      if (lp.kind === 'blink') {
+        const stop = fades ? off : end;
+        const half = Math.round((lp.period * fps) / 2);
+        const keys: Array<{t: number; v: number; ease?: 'hold' | [number, number, number, number]}> = [];
+        let on = true;
+        for (let t0 = inF; t0 < stop; t0 += half, on = !on) keys.push({t: t0, v: on ? 100 : 0, ease: 'hold'});
+        if (fades) keys.push({t: off, v: on ? 100 : 0, ease: [0.4, 0, 0.6, 1]}, {t: off + FADE, v: 0});
+        else delete keys[keys.length - 1].ease;
+        tr.opacity = {keys};
+      } else {
+        tr.position = {keys: [{t: inF, v: [0, 0]}, {t: duration, v: [lp.dx, 0]}]};
+        if (fades) tr.opacity = fadeOut();
+      }
+      layers.push({
+        kind: 'shape',
+        name: `${pre} | ${look} loop ${lp.kind} ${lp.items.join('+')}`,
+        items: lookItems(lp.items.map((k) => L.items[k])),
+        in: inF,
+        out: outF,
+        matte: {layer: panelMatte, type: 'alpha'},
+        label: lbl,
+        transform: tr,
+      });
+    }
     // header: top rule wipes in from the left, number/label/tag cut on
     const headerItems = lookItems(L.items, isHeader);
     layers.push({
       kind: 'shape',
       name: `${pre} | ${look} rule`,
       items: headerItems,
-      transform: {anchor: [0, 0], position: [0, 0], scale: timing && look === 'live' ? {keys: [{t: inF, v: [0, 100], ease}, {t: inF + WIPE_RULE, v: [100, 100]}]} : [100, 100]},
+      transform: {
+        anchor: [0, 0],
+        position: [0, 0],
+        scale: timing && look === 'live' ? {keys: [{t: inF, v: [0, 100], ease: ruleEase}, {t: inF + WIPE_RULE, v: [100, 100]}]} : [100, 100],
+        opacity: fades ? fadeOut() : undefined,
+      },
       in: inF,
       out: outF,
       label: lbl,
     });
     L.texts
       .filter((t) => t.y <= TILE.head)
-      .forEach((t, k) => layers.push({...textLayer(t, `${pre} | ${look} head ${k + 1}`), in: inF, out: outF, label: lbl}));
+      .forEach((t, k) => layers.push({...withFade(textLayer(t, `${pre} | ${look} head ${k + 1}`)), in: inF, out: outF, label: lbl}));
   }
   return {name: `TILE ${pre}`, width: TILE.w, height: Math.ceil(TILE.h), fps, duration, layers};
 }

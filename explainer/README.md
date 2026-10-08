@@ -1,6 +1,7 @@
 # Onemarsmedia 360 explainer
 
-30-second website explainer ("One brief → the whole campaign"), Editorial direction.
+40-second website explainer ("One brief → the whole campaign"), Editorial direction, v2 ("flowing"):
+one camera flies over a single page with no cuts, 60 fps, motion blur.
 The film is described once in an After-Effects-shaped scene model and rendered two ways:
 
 - **Remotion** → MP4 for the website (`src/render/SceneRenderer.tsx`)
@@ -11,12 +12,12 @@ The film is described once in an After-Effects-shaped scene model and rendered t
 | Path | What it is |
 |---|---|
 | `src/scene/` | Scene model (types), eases (exact AE speed/influence conversion), evaluation, builders |
-| `src/render/` | Remotion renderer (AE semantics: parenting without opacity, alpha mattes, precomps) |
-| `src/film/editorial/` | The film: tokens, tile precomps (`tiles.ts`, drawings in `art.json`), timeline (`film.ts`), timing data |
+| `src/render/` | Remotion renderer (AE semantics: parenting without opacity, alpha mattes, precomps) and motion blur |
+| `src/film/editorial/` | The film: tokens, tile precomps with micro-loops (`tiles.ts`, drawings in `art.json`), timeline and camera (`film.ts`), timing data |
 | `design/editorial/` | Approved styleframes (`frames.html`, PNGs) and motion notes |
 | `ae/` | AE script generator and a recording mock of the AE DOM used by the tests |
 | `audio/` | Offline VO alignment, beat-locked timing plan, VO pause edit, music edit, mix (-14 LUFS) |
-| `assets/audio/` | Source audio: Joshua VO take, music, SFX (ElevenLabs) |
+| `assets/audio/` | Source audio: Joshua VO take (`vo2_*`), timing config, music, SFX (ElevenLabs) |
 | `tools/` | `extract-art.mjs` (styleframes → vector JSON), `measure.mjs` (font metrics) |
 | `scripts/` | `build-all.sh`, `render.mjs`, `package-ae.ts`, `stills.mjs` |
 | `tests/` | Ease maths, springs, AE round trip of the test scene and of the whole film (every frame) |
@@ -27,19 +28,23 @@ The film is described once in an After-Effects-shaped scene model and rendered t
 npm install
 npx tsx tests/run-all.ts            # all checks
 bash scripts/build-all.sh           # audio → timing → render → AE package (deterministic)
-node scripts/stills.mjs Onemarsmedia360 out/stills 0,240,645   # stills to review
+node scripts/stills.mjs Onemarsmedia360 out/stills 300,725,1830   # stills to review (frames at 60 fps)
 npm run studio                      # Remotion Studio preview
 ```
 
-Outputs: `out/final/` (master and web MP4, poster, VTT captions) and `out/ae/Onemarsmedia-360-AE.zip`.
+Outputs: `out/final/` (master and web MP4, poster WebP/JPEG, VTT captions) and `out/ae/Onemarsmedia-360-AE.zip`
+(script + final mix + switched-off stems + fonts + readmes in PL/EN).
 The website uses the versioned copies in `../public/video/`.
 
 ## Changing things
 
 - **Words on screen / layout / timing:** `src/film/editorial/film.ts`. Every event is derived from
   `timing/vo.json` (word times) and `timing/plan.json` (beat grid, music edit).
-- **Voice-over:** replace `assets/audio/vo_*.mp3` and `vo_script.txt` (keep the commas where the picture cuts),
-  then `bash scripts/build-all.sh`.
+- **Camera:** the `CAMERA` table in `film.ts` (time, world point at the centre of the screen, zoom, ease).
+  In AE it is the null `CAMERA` (scale) and the precomp `WORLD` (position).
+- **Voice-over:** replace `assets/audio/vo2_*.mp3` and `vo2_script.txt` (keep the commas where the picture
+  changes), adjust `assets/audio/plan_config.json` (pauses, which words land on the beat), then
+  `bash scripts/build-all.sh`.
 - **Tile drawings:** edit `design/editorial/frames.html`, then `node tools/extract-art.mjs`.
 - Run the tests after any change: the AE round trip proves the AE project still matches the MP4.
 

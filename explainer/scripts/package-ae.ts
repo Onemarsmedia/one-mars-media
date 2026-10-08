@@ -1,13 +1,13 @@
 // Build the After Effects package for the film:
 //   out/ae/Onemarsmedia-360-AE/
 //     build-onemarsmedia-360.jsx   (File > Scripts > Run Script File...)
-//     audio/ vo.wav music.wav sfx.wav   (stems that add up to the final mix)
+//     audio/ mix.wav (final, -14 LUFS) + vo.wav music.wav sfx.wav (stems, switched off in AE)
 //     fonts/ Anton + Schibsted Grotesk (OFL)
 //     CZYTAJ-MNIE.txt / README.txt
 // and zips it. Before writing anything, the script is run on the AE mock and every animated
 // property, expression and text is checked against the scene (same checks as tests/run-all.ts).
 //
-// npx tsx scripts/package-ae.ts <stemsDir>
+// npx tsx scripts/package-ae.ts <mixDir>   (mix.py output: master.wav, stems/, loudness.json)
 import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -16,7 +16,7 @@ import {emitJsx} from '../ae/emit-jsx';
 import {runJsx} from '../ae/mock/ae-mock';
 import {buildEditorialScene, DURATION} from '../src/film/editorial/film';
 
-const stems = process.argv[2] ?? 'work/mixout/stems';
+const mixDir = process.argv[2] ?? 'work/mixout';
 const name = 'Onemarsmedia-360-AE';
 const dir = path.resolve('out/ae', name);
 fs.rmSync(dir, {recursive: true, force: true});
@@ -24,6 +24,7 @@ fs.mkdirSync(path.join(dir, 'audio'), {recursive: true});
 fs.mkdirSync(path.join(dir, 'fonts'), {recursive: true});
 
 const scene = buildEditorialScene();
+const main = scene.comps[scene.main];
 const {jsx, manifest} = emitJsx(scene);
 acorn.parse(jsx, {ecmaVersion: 3, sourceType: 'script'});
 if (!/^[\x00-\x7f]*$/.test(jsx)) throw new Error('jsx must be ASCII');
@@ -34,40 +35,88 @@ const layers = run.comps.reduce((n, c) => n + c.layerList.length, 0);
 console.log(`jsx ${(jsx.length / 1e6).toFixed(2)} MB, ES3 ok, mock AE ok: ${run.comps.length} comps, ${layers} layers, ${manifest.length} animated properties, ${DURATION} frames`);
 
 fs.writeFileSync(path.join(dir, 'build-onemarsmedia-360.jsx'), jsx);
-for (const f of ['vo.wav', 'music.wav', 'sfx.wav']) fs.copyFileSync(path.join(stems, f), path.join(dir, 'audio', f));
+fs.copyFileSync(path.join(mixDir, 'master.wav'), path.join(dir, 'audio', 'mix.wav'));
+for (const f of ['vo.wav', 'music.wav', 'sfx.wav']) fs.copyFileSync(path.join(mixDir, 'stems', f), path.join(dir, 'audio', f));
 for (const font of scene.fonts) fs.copyFileSync(path.join('public/fonts', font.file), path.join(dir, 'fonts', `${font.postscript}.ttf`));
+const loud = JSON.parse(fs.readFileSync(path.join(mixDir, 'loudness.json'), 'utf8'));
+const headroom = Math.max(0, loud.gain_db - loud.stem_gain_db).toFixed(1).replace('.', ',');
+const headroomEn = Math.max(0, loud.gain_db - loud.stem_gain_db).toFixed(1);
+const secs = Math.round(main.duration / main.fps);
+const nFonts = scene.fonts.length;
 
-const pl = `ONEMARSMEDIA 360 - PROJEKT AFTER EFFECTS (AE 2025/2026)
+const pl = `Onemarsmedia 360 - projekt After Effects
+After Effects 2023 lub nowszy (przygotowane pod AE 2025/2026). Bez pluginów.
 
-1. Zainstaluj fonty z folderu "fonts" (dwuklik > Zainstaluj): Anton i Schibsted Grotesk.
-   Są darmowe (licencja OFL). Zrób to PRZED uruchomieniem skryptu.
-2. Otwórz After Effects (nowy, pusty projekt).
-3. File > Scripts > Run Script File... > wybierz "build-onemarsmedia-360.jsx".
-   Skrypt sam zbuduje cały projekt (ok. 1-3 min). Folder "audio" musi leżeć obok skryptu.
-4. Na końcu pojawi się komunikat. Zapisz projekt: File > Save As.
+JAK OTWORZYĆ
+1. Zainstaluj fonty z folderu "fonts": zaznacz wszystkie ${nFonts} pliki > prawy przycisk > Zainstaluj.
+   Anton i Schibsted Grotesk są darmowe (licencja OFL). Potem uruchom ponownie After Effects.
+2. File > Scripts > Run Script File... > wybierz "build-onemarsmedia-360.jsx".
+   Folder "audio" musi leżeć obok skryptu. Na pytanie o nowy, pusty projekt odpowiedz "Tak".
+   Budowanie trwa ok. 1-3 min.
+3. Na końcu pojawi się komunikat. Zapisz projekt: File > Save As > Save As... (Ctrl+Shift+S / Cmd+Shift+S).
+   Jeśli komunikat wymienia podmienione fonty: zainstaluj je, uruchom AE ponownie i zbuduj projekt jeszcze raz
+   (samo ponowne otwarcie projektu nie naprawi tekstów).
 
 CO JEST W ŚRODKU
-- Kompozycja główna: "ONEMARSMEDIA 360" (30 s, 1920x1080, 30 kl./s) z markerami scen.
-- Wszystko jest edytowalne: warstwy kształtów, teksty, klatki kluczowe.
+- Kompozycja główna "Onemarsmedia 360": ${secs} s, 1920x1080, ${main.fps} kl./s, markery scen, włączony motion blur.
+- Wszystko jest natywne i edytowalne: warstwy kształtów, teksty, klatki kluczowe.
+- Kamera: null "CAMERA" (skala = zbliżenie) i prekompozycja "WORLD" (pozycja = kadr).
+  Cała strona (brief, kafle, pasek z licznikiem, plansza końcowa) leży w "WORLD".
+  Ruch kamery zmieniasz w jednym miejscu: Scale na "CAMERA" i Position na "WORLD" (te same czasy kluczy).
+- Do ekranu przypięte są tylko: nagłówek (masthead) oraz kolumny "INDEX 03 FILMING" i "INDEX 12 DISTRIBUTION",
+  które wjeżdżają z prawej.
 - Licznik 360: prekompozycja "DEGREES 360", null "360 CONTROL", suwak "Degrees".
-  Przesuwasz klatki tego suwaka i zmienia się tempo licznika, wypełnienie cyfr oraz pierścień.
-- Kafle: "TILE 01 CONCEPT" ... "TILE 12 DISTRIBUTION". Każdy ma wygląd pusty, aktywny (czerwony) i gotowy.
-- Siatka kafli: "GRID". Zbliżenia to twarde cięcia skali i pozycji tej warstwy (Collapse Transformations włączone).
-- Pasek z licznikiem: "BAND" (null "BAND CONTROL", suwak "Tiles" = ile kafli jest gotowych).
-- Audio: lektor, muzyka (już ściszona pod głosem) i SFX jako osobne ścieżki. Razem dają finalny miks (-14 LUFS).
+  Suwak steruje cyframi, ich wypełnieniem i pierścieniem.
+  Uwaga: kafle, suwak "Tiles" (w "BAND STATUS"), napis "Now:" i linijka mają własne klatki kluczowe.
+  Przy zmianie tempa przesuń je razem z kluczami suwaka "Degrees".
+- Kafle: "TILE 01 CONCEPT" ... "TILE 12 DISTRIBUTION". Każdy kafel ma trzy stany: pusty, aktywny (czerwony)
+  i gotowy. Wyjątek: 03 FILMING to ciemny panel bez stanu czerwonego.
+  Drobne pętle (mrugające REC, timecode, playheady, kursor) są na osobnych warstwach "loop".
+- Brief: prekompozycja "BRIEF TYPE" i 12 warstw "brief slice" z track matte. To one rozlatują się na miejsca kafli.
+- Audio: warstwa "Mix (final, -14 LUFS)" to gotowy miks, ten sam co w MP4.
+  Stemy (lektor, muzyka, SFX) są wyłączone. Włącz je, jeśli chcesz zrobić własny miks: są bez limitera
+  i ściszone o ${headroom} dB względem miksu, żeby ich suma nie przesterowywała.
 
-DO PRZERÓBKI NA 9:16 LUB INNY FORMAT
-Zrób nową kompozycję i przenieś do niej prekompozycje (GRID, BAND, DEGREES 360) – są od siebie niezależne.
+WERSJA 9:16 LUB INNY FORMAT
+Utwórz nową kompozycję i przeciągnij do niej z panelu Project potrzebne prekompozycje
+(GRID, BAND, DEGREES 360, TILE ...). Nie zależą od siebie. Kadr ustawisz nullem, tak jak w "Onemarsmedia 360".
 `;
-const en = `ONEMARSMEDIA 360 - AFTER EFFECTS PROJECT (AE 2025/2026)
+const en = `Onemarsmedia 360 - After Effects project
+After Effects 2023 or newer (prepared for AE 2025/2026). No plugins.
 
-1. Install the fonts in "fonts" (Anton, Schibsted Grotesk; OFL) BEFORE running the script.
-2. After Effects > File > Scripts > Run Script File... > "build-onemarsmedia-360.jsx".
-   Keep the "audio" folder next to the script. The build takes about 1-3 minutes.
-3. File > Save As to keep the project.
+HOW TO OPEN
+1. Install the fonts in "fonts": select all ${nFonts} files > right-click > Install.
+   Anton and Schibsted Grotesk are free (OFL). Then restart After Effects.
+2. File > Scripts > Run Script File... > "build-onemarsmedia-360.jsx".
+   Keep the "audio" folder next to the script. When asked about a new, empty project, answer Yes.
+   The build takes about 1-3 minutes.
+3. A message appears at the end. Save: File > Save As > Save As... (Ctrl+Shift+S / Cmd+Shift+S).
+   If the message lists substituted fonts: install them, restart AE and build again
+   (reopening the project will not fix the text).
 
-Main comp "ONEMARSMEDIA 360" (30 s, 1920x1080, 30 fps) with scene markers. Everything is native and editable.
-The counter is driven by one slider: "DEGREES 360" > "360 CONTROL" > Degrees.
+WHAT IS INSIDE
+- Main comp "Onemarsmedia 360": ${secs} s, 1920x1080, ${main.fps} fps, scene markers, motion blur on.
+- Everything is native and editable: shape layers, text, keyframes.
+- Camera: null "CAMERA" (scale = zoom) and the precomp "WORLD" (position = framing).
+  The whole page (brief, tiles, counter band, sign-off) lives in "WORLD".
+  Change the camera move in one place: Scale on "CAMERA" and Position on "WORLD" (same key times).
+- Fixed to the screen: only the masthead and the "INDEX 03 FILMING" / "INDEX 12 DISTRIBUTION" columns,
+  which slide in from the right.
+- 360 counter: precomp "DEGREES 360", null "360 CONTROL", slider "Degrees".
+  The slider drives the digits, their fill and the ring.
+  Note: the tiles, the "Tiles" slider (in "BAND STATUS"), the "Now:" text and the ruler have their own keyframes.
+  To change the pace, move them together with the "Degrees" keys.
+- Tiles: "TILE 01 CONCEPT" ... "TILE 12 DISTRIBUTION". Each tile has three states: empty, active (red)
+  and done. Exception: 03 FILMING is the dark panel and has no red state.
+  The micro-loops (REC blink, timecode, playheads, cursor) sit on separate "loop" layers.
+- Brief: precomp "BRIEF TYPE" and 12 "brief slice" layers with track mattes; they fly to the tile slots.
+- Audio: the "Mix (final, -14 LUFS)" layer is the finished mix, the same as in the MP4.
+  The stems (VO, music, SFX) are switched off. Turn them on for your own mix: they are unlimited
+  and ${headroomEn} dB below the mix, so their sum does not clip.
+
+9:16 OR ANOTHER FORMAT
+Create a new comp and drag the precomps you need from the Project panel
+(GRID, BAND, DEGREES 360, TILE ...). They are independent. Frame them with a null, as in "Onemarsmedia 360".
 `;
 fs.writeFileSync(path.join(dir, 'CZYTAJ-MNIE.txt'), pl);
 fs.writeFileSync(path.join(dir, 'README.txt'), en);

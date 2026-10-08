@@ -5,7 +5,7 @@ import type {FontRef} from '../../scene/types';
 export const W = 1920;
 export const H = 1080;
 export const M = 64;
-export const FPS = 30;
+export const FPS = 60;
 
 export const C = {
   paper: '#F1ECE2',

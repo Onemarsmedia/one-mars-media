@@ -225,6 +225,16 @@ export interface Comp {
   bg?: Color;
   layers: Layer[];
   markers?: Marker[];
+  /**
+   * Camera-style motion blur, centred on the frame (AE: shutter phase = -angle/2).
+   * Set on the main comp; AE gets the switch on every comp and layer.
+   */
+  motionBlur?: {
+    shutterAngle: number;
+    samples: number;
+    /** Remotion only: samples per frame (more while things move fast, 1 when still). AE adapts on its own. */
+    perFrame?: number[];
+  };
 }
 
 export interface AudioClip {
@@ -235,6 +245,8 @@ export interface AudioClip {
   start: number;
   /** Gain in dB applied in AE (the Remotion mix is rendered separately). */
   gainDb?: number;
+  /** Imported with its audio switch off (a stem kept for re-mixing). */
+  muted?: boolean;
 }
 
 export interface Scene {

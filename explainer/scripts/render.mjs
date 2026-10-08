@@ -2,8 +2,8 @@
 //   node scripts/render.mjs <compositionId> <outDir> [--audio master.wav] [--poster-frame N] [--captions words.json]
 // Produces in <outDir>:
 //   <id>-master.mp4   H.264 High, CRF 16, AAC 320k (archive / other platforms)
-//   <id>-web.mp4      H.264, ~6 Mbps, AAC 192k, faststart (website)
-//   <id>-poster.jpg   the poster frame (website <video poster>)
+//   <id>-web.mp4      H.264 High@4.2 (4 refs), ~6 Mbps, AAC 192k, faststart (website)
+//   <id>-poster.webp  the poster frame (website <video poster>), plus <id>-poster.jpg (thumbnail)
 //   <id>.en.vtt       captions from the VO word timings (if --captions)
 import {bundle} from '@remotion/bundler';
 import {renderMedia, renderStill, selectComposition} from '@remotion/renderer';
@@ -44,13 +44,14 @@ const web = path.join(outDir, `${id}-web.mp4`);
 const audioIn = audio ? ['-i', audio] : [];
 const audioMap = audio ? ['-map', '1:a:0', '-shortest'] : [];
 ff('-i', silent, ...audioIn, '-map', '0:v:0', ...audioMap, '-c:v', 'libx264', '-profile:v', 'high', '-crf', '16', '-preset', 'slow', '-pix_fmt', 'yuv420p', ...(audio ? ['-c:a', 'aac', '-b:a', '320k'] : []), '-movflags', '+faststart', master);
-ff('-i', silent, ...audioIn, '-map', '0:v:0', ...audioMap, '-c:v', 'libx264', '-profile:v', 'high', '-crf', '20', '-maxrate', '6M', '-bufsize', '12M', '-preset', 'slow', '-pix_fmt', 'yuv420p', ...(audio ? ['-c:a', 'aac', '-b:a', '192k'] : []), '-movflags', '+faststart', web);
+ff('-i', silent, ...audioIn, '-map', '0:v:0', ...audioMap, '-c:v', 'libx264', '-profile:v', 'high', '-level:v', '4.2', '-x264-params', 'ref=4', '-crf', '20', '-maxrate', '6M', '-bufsize', '12M', '-preset', 'slow', '-pix_fmt', 'yuv420p', ...(audio ? ['-c:a', 'aac', '-b:a', '192k'] : []), '-movflags', '+faststart', web);
 fs.rmSync(silent);
 
 if (posterFrame !== undefined) {
   const png = path.join(outDir, `${id}-poster.png`);
   await renderStill({composition, serveUrl, frame: Number(posterFrame), output: png, browserExecutable: BROWSER, logLevel: 'error'});
-  ff('-i', png, '-q:v', '2', path.join(outDir, `${id}-poster.jpg`));
+  ff('-i', png, '-q:v', '3', path.join(outDir, `${id}-poster.jpg`));
+  ff('-i', png, '-c:v', 'libwebp', '-quality', '82', path.join(outDir, `${id}-poster.webp`));
   fs.rmSync(png);
 }
 

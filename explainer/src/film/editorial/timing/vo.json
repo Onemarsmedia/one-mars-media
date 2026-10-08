@@ -1,738 +1,957 @@
 {
- "offset": 1.7,
- "vo_duration": 24.74,
+ "offset": 2.3,
+ "vo_duration": 34.06,
  "chunks": [
   {
    "text": "Then you need more than a video",
    "punct": ".",
-   "start": 1.71,
-   "end": 3.44
+   "start": 2.3,
+   "end": 4.1
   },
   {
    "text": "You need every angle",
-   "punct": ".",
-   "start": 3.74,
-   "end": 4.99
+   "punct": ",",
+   "start": 4.5,
+   "end": 5.76
   },
   {
-   "text": "We make them all",
+   "text": "and one team that makes them all",
    "punct": ".",
-   "start": 5.29,
-   "end": 5.99
+   "start": 5.98,
+   "end": 7.8
+  },
+  {
+   "text": "It starts with the idea",
+   "punct": ".",
+   "start": 8.9,
+   "end": 10.19
   },
   {
    "text": "Think it",
    "punct": ",",
-   "start": 6.54,
-   "end": 6.92
+   "start": 10.64,
+   "end": 11.04
   },
   {
    "text": "sketch it",
    "punct": ",",
-   "start": 7.06,
-   "end": 7.61
+   "start": 11.22,
+   "end": 11.77
   },
   {
    "text": "shoot it",
    "punct": ".",
-   "start": 7.75,
-   "end": 8.24
+   "start": 11.95,
+   "end": 12.44
+  },
+  {
+   "text": "Then we shape it",
+   "punct": ".",
+   "start": 13.47,
+   "end": 14.22
   },
   {
    "text": "Cut it",
    "punct": ",",
-   "start": 8.93,
-   "end": 9.36
+   "start": 14.62,
+   "end": 15.03
   },
   {
    "text": "move it",
    "punct": ",",
-   "start": 9.5,
-   "end": 10.0
+   "start": 15.21,
+   "end": 15.68
   },
   {
    "text": "design it",
    "punct": ".",
-   "start": 10.14,
-   "end": 10.64
+   "start": 15.86,
+   "end": 16.38
   },
   {
    "text": "That's halfway",
    "punct": ".",
-   "start": 10.84,
-   "end": 11.56
+   "start": 16.93,
+   "end": 17.63
+  },
+  {
+   "text": "Now take it everywhere",
+   "punct": ".",
+   "start": 18.41,
+   "end": 19.72
   },
   {
    "text": "Podcast it",
    "punct": ",",
-   "start": 11.783,
-   "end": 12.513
+   "start": 20.12,
+   "end": 20.79
   },
   {
    "text": "post it",
    "punct": ",",
-   "start": 12.653,
-   "end": 13.133
+   "start": 20.97,
+   "end": 21.42
   },
   {
    "text": "build the site",
    "punct": ".",
-   "start": 13.273,
-   "end": 14.013
+   "start": 21.6,
+   "end": 22.24
   },
   {
    "text": "Code the app",
    "punct": ",",
-   "start": 14.22,
-   "end": 14.89
+   "start": 22.82,
+   "end": 23.5
   },
   {
    "text": "version it with AI",
    "punct": ",",
-   "start": 15.03,
-   "end": 16.26
+   "start": 23.68,
+   "end": 24.9
   },
   {
    "text": "ship it everywhere",
    "punct": ".",
-   "start": 16.4,
-   "end": 17.5
+   "start": 25.08,
+   "end": 26.25
   },
   {
    "text": "That's three-sixty",
    "punct": ".",
-   "start": 18.05,
-   "end": 19.07
+   "start": 27.25,
+   "end": 28.2
   },
   {
    "text": "One brief",
    "punct": ",",
-   "start": 19.35,
-   "end": 20.01
+   "start": 28.65,
+   "end": 29.32
   },
   {
    "text": "the whole campaign",
+   "punct": ",",
+   "start": 29.5,
+   "end": 30.48
+  },
+  {
+   "text": "under one roof",
    "punct": ".",
-   "start": 20.17,
-   "end": 21.16
+   "start": 30.66,
+   "end": 31.54
   },
   {
    "text": "Onemarsmedia",
    "punct": ".",
-   "start": 23.41,
-   "end": 24.36
+   "start": 33.24,
+   "end": 34.23
   },
   {
    "text": "One team",
    "punct": ".",
-   "start": 24.68,
-   "end": 25.31
+   "start": 34.58,
+   "end": 35.19
   },
   {
    "text": "No limits",
    "punct": ".",
-   "start": 25.57,
-   "end": 26.38
+   "start": 35.47,
+   "end": 36.3
   }
  ],
  "words": [
   {
    "text": "Then",
-   "start": 1.71,
-   "end": 1.902,
+   "start": 2.3,
+   "end": 2.5,
    "syllables": [
-    1.806
+    2.4
    ],
    "chunk": 0,
    "snapped": false
   },
   {
    "text": "you",
-   "start": 1.902,
-   "end": 2.094,
+   "start": 2.5,
+   "end": 2.7,
    "syllables": [
-    1.998
+    2.6
    ],
    "chunk": 0,
    "snapped": false
   },
   {
    "text": "need",
-   "start": 2.094,
-   "end": 2.287,
+   "start": 2.7,
+   "end": 2.9,
    "syllables": [
-    2.191
+    2.8
    ],
    "chunk": 0,
    "snapped": false
   },
   {
    "text": "more",
-   "start": 2.287,
-   "end": 2.479,
+   "start": 2.9,
+   "end": 3.1,
    "syllables": [
-    2.383
+    3.0
    ],
    "chunk": 0,
    "snapped": false
   },
   {
    "text": "than",
-   "start": 2.479,
-   "end": 2.671,
+   "start": 3.1,
+   "end": 3.3,
    "syllables": [
-    2.575
+    3.2
    ],
    "chunk": 0,
    "snapped": false
   },
   {
    "text": "a",
-   "start": 2.671,
-   "end": 2.863,
+   "start": 3.3,
+   "end": 3.5,
    "syllables": [
-    2.767
+    3.4
    ],
    "chunk": 0,
    "snapped": false
   },
   {
    "text": "video",
-   "start": 2.863,
-   "end": 3.44,
+   "start": 3.5,
+   "end": 4.1,
    "syllables": [
-    2.959,
-    3.152,
-    3.344
+    3.6,
+    3.8,
+    4.0
    ],
    "chunk": 0,
    "snapped": false
   },
   {
    "text": "You",
-   "start": 3.74,
-   "end": 3.948,
+   "start": 4.5,
+   "end": 4.71,
    "syllables": [
-    3.844
+    4.605
    ],
    "chunk": 1,
    "snapped": false
   },
   {
    "text": "need",
-   "start": 3.948,
-   "end": 4.157,
+   "start": 4.71,
+   "end": 4.92,
    "syllables": [
-    4.052
+    4.815
    ],
    "chunk": 1,
    "snapped": false
   },
   {
    "text": "every",
-   "start": 4.157,
-   "end": 4.573,
+   "start": 4.92,
+   "end": 5.34,
    "syllables": [
-    4.261,
-    4.469
+    5.025,
+    5.235
    ],
    "chunk": 1,
    "snapped": false
   },
   {
    "text": "angle",
-   "start": 4.573,
-   "end": 4.99,
+   "start": 5.34,
+   "end": 5.76,
    "syllables": [
-    4.677,
-    4.886
+    5.445,
+    5.655
    ],
    "chunk": 1,
    "snapped": false
   },
   {
-   "text": "We",
-   "start": 5.29,
-   "end": 5.42,
+   "text": "and",
+   "start": 5.98,
+   "end": 6.207,
    "syllables": [
-    5.35
+    6.094
    ],
    "chunk": 2,
-   "snapped": true
+   "snapped": false
   },
   {
-   "text": "make",
-   "start": 5.42,
-   "end": 5.58,
+   "text": "one",
+   "start": 6.207,
+   "end": 6.435,
    "syllables": [
-    5.49
+    6.321
    ],
    "chunk": 2,
-   "snapped": true
+   "snapped": false
+  },
+  {
+   "text": "team",
+   "start": 6.435,
+   "end": 6.662,
+   "syllables": [
+    6.549
+   ],
+   "chunk": 2,
+   "snapped": false
+  },
+  {
+   "text": "that",
+   "start": 6.662,
+   "end": 6.89,
+   "syllables": [
+    6.776
+   ],
+   "chunk": 2,
+   "snapped": false
+  },
+  {
+   "text": "makes",
+   "start": 6.89,
+   "end": 7.345,
+   "syllables": [
+    7.004,
+    7.231
+   ],
+   "chunk": 2,
+   "snapped": false
   },
   {
    "text": "them",
-   "start": 5.58,
-   "end": 5.735,
+   "start": 7.345,
+   "end": 7.573,
    "syllables": [
-    5.67
+    7.459
    ],
    "chunk": 2,
-   "snapped": true
+   "snapped": false
   },
   {
    "text": "all",
-   "start": 5.735,
-   "end": 5.99,
+   "start": 7.573,
+   "end": 7.8,
    "syllables": [
-    5.8
+    7.686
    ],
    "chunk": 2,
-   "snapped": true
+   "snapped": false
   },
   {
-   "text": "Think",
-   "start": 6.54,
-   "end": 6.705,
+   "text": "It",
+   "start": 8.9,
+   "end": 9.115,
    "syllables": [
-    6.59
+    9.008
    ],
    "chunk": 3,
-   "snapped": true
+   "snapped": false
   },
   {
-   "text": "it",
-   "start": 6.705,
-   "end": 6.92,
+   "text": "starts",
+   "start": 9.115,
+   "end": 9.33,
    "syllables": [
-    6.82
+    9.223
    ],
    "chunk": 3,
-   "snapped": true
-  },
-  {
-   "text": "sketch",
-   "start": 7.06,
-   "end": 7.41,
-   "syllables": [
-    7.3
-   ],
-   "chunk": 4,
-   "snapped": true
-  },
-  {
-   "text": "it",
-   "start": 7.41,
-   "end": 7.61,
-   "syllables": [
-    7.52
-   ],
-   "chunk": 4,
-   "snapped": true
-  },
-  {
-   "text": "shoot",
-   "start": 7.75,
-   "end": 8.045,
-   "syllables": [
-    7.89
-   ],
-   "chunk": 5,
-   "snapped": true
-  },
-  {
-   "text": "it",
-   "start": 8.045,
-   "end": 8.24,
-   "syllables": [
-    8.2
-   ],
-   "chunk": 5,
-   "snapped": true
-  },
-  {
-   "text": "Cut",
-   "start": 8.93,
-   "end": 9.135,
-   "syllables": [
-    9.03
-   ],
-   "chunk": 6,
-   "snapped": true
-  },
-  {
-   "text": "it",
-   "start": 9.135,
-   "end": 9.36,
-   "syllables": [
-    9.24
-   ],
-   "chunk": 6,
-   "snapped": true
-  },
-  {
-   "text": "move",
-   "start": 9.5,
-   "end": 9.765,
-   "syllables": [
-    9.64
-   ],
-   "chunk": 7,
-   "snapped": true
-  },
-  {
-   "text": "it",
-   "start": 9.765,
-   "end": 10.0,
-   "syllables": [
-    9.89
-   ],
-   "chunk": 7,
-   "snapped": true
-  },
-  {
-   "text": "design",
-   "start": 10.14,
-   "end": 10.473,
-   "syllables": [
-    10.223,
-    10.39
-   ],
-   "chunk": 8,
-   "snapped": false
-  },
-  {
-   "text": "it",
-   "start": 10.473,
-   "end": 10.64,
-   "syllables": [
-    10.557
-   ],
-   "chunk": 8,
-   "snapped": false
-  },
-  {
-   "text": "That's",
-   "start": 10.84,
-   "end": 11.01,
-   "syllables": [
-    10.89
-   ],
-   "chunk": 9,
-   "snapped": true
-  },
-  {
-   "text": "halfway",
-   "start": 11.01,
-   "end": 11.56,
-   "syllables": [
-    11.13,
-    11.4
-   ],
-   "chunk": 9,
-   "snapped": true
-  },
-  {
-   "text": "Podcast",
-   "start": 11.783,
-   "end": 12.27,
-   "syllables": [
-    11.905,
-    12.148
-   ],
-   "chunk": 10,
-   "snapped": false
-  },
-  {
-   "text": "it",
-   "start": 12.27,
-   "end": 12.513,
-   "syllables": [
-    12.391
-   ],
-   "chunk": 10,
-   "snapped": false
-  },
-  {
-   "text": "post",
-   "start": 12.653,
-   "end": 12.873,
-   "syllables": [
-    12.713
-   ],
-   "chunk": 11,
-   "snapped": true
-  },
-  {
-   "text": "it",
-   "start": 12.873,
-   "end": 13.133,
-   "syllables": [
-    13.033
-   ],
-   "chunk": 11,
-   "snapped": true
-  },
-  {
-   "text": "build",
-   "start": 13.273,
-   "end": 13.52,
-   "syllables": [
-    13.396
-   ],
-   "chunk": 12,
-   "snapped": false
-  },
-  {
-   "text": "the",
-   "start": 13.52,
-   "end": 13.766,
-   "syllables": [
-    13.643
-   ],
-   "chunk": 12,
-   "snapped": false
-  },
-  {
-   "text": "site",
-   "start": 13.766,
-   "end": 14.013,
-   "syllables": [
-    13.89
-   ],
-   "chunk": 12,
-   "snapped": false
-  },
-  {
-   "text": "Code",
-   "start": 14.22,
-   "end": 14.455,
-   "syllables": [
-    14.35
-   ],
-   "chunk": 13,
-   "snapped": true
-  },
-  {
-   "text": "the",
-   "start": 14.455,
-   "end": 14.63,
-   "syllables": [
-    14.56
-   ],
-   "chunk": 13,
-   "snapped": true
-  },
-  {
-   "text": "app",
-   "start": 14.63,
-   "end": 14.89,
-   "syllables": [
-    14.7
-   ],
-   "chunk": 13,
-   "snapped": true
-  },
-  {
-   "text": "version",
-   "start": 15.03,
-   "end": 15.44,
-   "syllables": [
-    15.133,
-    15.337
-   ],
-   "chunk": 14,
-   "snapped": false
-  },
-  {
-   "text": "it",
-   "start": 15.44,
-   "end": 15.645,
-   "syllables": [
-    15.543
-   ],
-   "chunk": 14,
    "snapped": false
   },
   {
    "text": "with",
-   "start": 15.645,
-   "end": 15.85,
+   "start": 9.33,
+   "end": 9.545,
    "syllables": [
-    15.747
+    9.438
    ],
-   "chunk": 14,
+   "chunk": 3,
    "snapped": false
   },
   {
-   "text": "AI",
-   "start": 15.85,
-   "end": 16.26,
+   "text": "the",
+   "start": 9.545,
+   "end": 9.76,
    "syllables": [
-    15.953,
-    16.157
+    9.653
    ],
-   "chunk": 14,
+   "chunk": 3,
    "snapped": false
   },
   {
-   "text": "ship",
-   "start": 16.4,
-   "end": 16.66,
+   "text": "idea",
+   "start": 9.76,
+   "end": 10.19,
    "syllables": [
-    16.58
+    9.867,
+    10.082
    ],
-   "chunk": 15,
+   "chunk": 3,
+   "snapped": false
+  },
+  {
+   "text": "Think",
+   "start": 10.64,
+   "end": 10.825,
+   "syllables": [
+    10.71
+   ],
+   "chunk": 4,
    "snapped": true
   },
   {
    "text": "it",
-   "start": 16.66,
-   "end": 16.88,
+   "start": 10.825,
+   "end": 11.04,
    "syllables": [
-    16.74
+    10.94
    ],
-   "chunk": 15,
+   "chunk": 4,
    "snapped": true
   },
   {
-   "text": "everywhere",
-   "start": 16.88,
-   "end": 17.5,
+   "text": "sketch",
+   "start": 11.22,
+   "end": 11.565,
    "syllables": [
-    17.02,
-    17.21,
-    17.39
+    11.45
    ],
-   "chunk": 15,
+   "chunk": 5,
    "snapped": true
+  },
+  {
+   "text": "it",
+   "start": 11.565,
+   "end": 11.77,
+   "syllables": [
+    11.68
+   ],
+   "chunk": 5,
+   "snapped": true
+  },
+  {
+   "text": "shoot",
+   "start": 11.95,
+   "end": 12.26,
+   "syllables": [
+    12.12
+   ],
+   "chunk": 6,
+   "snapped": true
+  },
+  {
+   "text": "it",
+   "start": 12.26,
+   "end": 12.44,
+   "syllables": [
+    12.4
+   ],
+   "chunk": 6,
+   "snapped": true
+  },
+  {
+   "text": "Then",
+   "start": 13.47,
+   "end": 13.657,
+   "syllables": [
+    13.564
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "we",
+   "start": 13.657,
+   "end": 13.845,
+   "syllables": [
+    13.751
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "shape",
+   "start": 13.845,
+   "end": 14.032,
+   "syllables": [
+    13.939
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 14.032,
+   "end": 14.22,
+   "syllables": [
+    14.126
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "Cut",
+   "start": 14.62,
+   "end": 14.82,
+   "syllables": [
+    14.72
+   ],
+   "chunk": 8,
+   "snapped": true
+  },
+  {
+   "text": "it",
+   "start": 14.82,
+   "end": 15.03,
+   "syllables": [
+    14.92
+   ],
+   "chunk": 8,
+   "snapped": true
+  },
+  {
+   "text": "move",
+   "start": 15.21,
+   "end": 15.475,
+   "syllables": [
+    15.38
+   ],
+   "chunk": 9,
+   "snapped": true
+  },
+  {
+   "text": "it",
+   "start": 15.475,
+   "end": 15.68,
+   "syllables": [
+    15.57
+   ],
+   "chunk": 9,
+   "snapped": true
+  },
+  {
+   "text": "design",
+   "start": 15.86,
+   "end": 16.207,
+   "syllables": [
+    15.947,
+    16.12
+   ],
+   "chunk": 10,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 16.207,
+   "end": 16.38,
+   "syllables": [
+    16.293
+   ],
+   "chunk": 10,
+   "snapped": false
   },
   {
    "text": "That's",
-   "start": 18.05,
-   "end": 18.305,
+   "start": 16.93,
+   "end": 17.095,
    "syllables": [
-    18.178
+    16.97
    ],
-   "chunk": 16,
-   "snapped": false
-  },
-  {
-   "text": "three-sixty",
-   "start": 18.305,
-   "end": 19.07,
-   "syllables": [
-    18.433,
-    18.688,
-    18.942
-   ],
-   "chunk": 16,
-   "snapped": false
-  },
-  {
-   "text": "One",
-   "start": 19.35,
-   "end": 19.585,
-   "syllables": [
-    19.45
-   ],
-   "chunk": 17,
+   "chunk": 11,
    "snapped": true
   },
   {
-   "text": "brief",
-   "start": 19.585,
-   "end": 20.01,
+   "text": "halfway",
+   "start": 17.095,
+   "end": 17.63,
    "syllables": [
-    19.72
+    17.22,
+    17.45
    ],
-   "chunk": 17,
+   "chunk": 11,
+   "snapped": true
+  },
+  {
+   "text": "Now",
+   "start": 18.41,
+   "end": 18.628,
+   "syllables": [
+    18.519
+   ],
+   "chunk": 12,
+   "snapped": false
+  },
+  {
+   "text": "take",
+   "start": 18.628,
+   "end": 18.847,
+   "syllables": [
+    18.738
+   ],
+   "chunk": 12,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 18.847,
+   "end": 19.065,
+   "syllables": [
+    18.956
+   ],
+   "chunk": 12,
+   "snapped": false
+  },
+  {
+   "text": "everywhere",
+   "start": 19.065,
+   "end": 19.72,
+   "syllables": [
+    19.174,
+    19.393,
+    19.611
+   ],
+   "chunk": 12,
+   "snapped": false
+  },
+  {
+   "text": "Podcast",
+   "start": 20.12,
+   "end": 20.567,
+   "syllables": [
+    20.232,
+    20.455
+   ],
+   "chunk": 13,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 20.567,
+   "end": 20.79,
+   "syllables": [
+    20.678
+   ],
+   "chunk": 13,
+   "snapped": false
+  },
+  {
+   "text": "post",
+   "start": 20.97,
+   "end": 21.22,
+   "syllables": [
+    21.08
+   ],
+   "chunk": 14,
+   "snapped": true
+  },
+  {
+   "text": "it",
+   "start": 21.22,
+   "end": 21.42,
+   "syllables": [
+    21.36
+   ],
+   "chunk": 14,
+   "snapped": true
+  },
+  {
+   "text": "build",
+   "start": 21.6,
+   "end": 21.76,
+   "syllables": [
+    21.66
+   ],
+   "chunk": 15,
    "snapped": true
   },
   {
    "text": "the",
-   "start": 20.17,
-   "end": 20.417,
+   "start": 21.76,
+   "end": 21.99,
    "syllables": [
-    20.294
+    21.86
    ],
-   "chunk": 18,
+   "chunk": 15,
+   "snapped": true
+  },
+  {
+   "text": "site",
+   "start": 21.99,
+   "end": 22.24,
+   "syllables": [
+    22.12
+   ],
+   "chunk": 15,
+   "snapped": true
+  },
+  {
+   "text": "Code",
+   "start": 22.82,
+   "end": 23.065,
+   "syllables": [
+    22.95
+   ],
+   "chunk": 16,
+   "snapped": true
+  },
+  {
+   "text": "the",
+   "start": 23.065,
+   "end": 23.25,
+   "syllables": [
+    23.18
+   ],
+   "chunk": 16,
+   "snapped": true
+  },
+  {
+   "text": "app",
+   "start": 23.25,
+   "end": 23.5,
+   "syllables": [
+    23.32
+   ],
+   "chunk": 16,
+   "snapped": true
+  },
+  {
+   "text": "version",
+   "start": 23.68,
+   "end": 24.087,
+   "syllables": [
+    23.782,
+    23.985
+   ],
+   "chunk": 17,
    "snapped": false
   },
   {
-   "text": "whole",
-   "start": 20.417,
-   "end": 20.665,
+   "text": "it",
+   "start": 24.087,
+   "end": 24.29,
    "syllables": [
-    20.541
+    24.188
    ],
-   "chunk": 18,
+   "chunk": 17,
    "snapped": false
   },
   {
-   "text": "campaign",
-   "start": 20.665,
-   "end": 21.16,
+   "text": "with",
+   "start": 24.29,
+   "end": 24.493,
    "syllables": [
-    20.789,
-    21.036
+    24.392
    ],
-   "chunk": 18,
+   "chunk": 17,
    "snapped": false
   },
   {
-   "text": "Onemarsmedia",
-   "start": 23.41,
-   "end": 24.36,
+   "text": "AI",
+   "start": 24.493,
+   "end": 24.9,
    "syllables": [
-    23.505,
-    23.695,
-    23.885,
-    24.075,
-    24.265
+    24.595,
+    24.798
+   ],
+   "chunk": 17,
+   "snapped": false
+  },
+  {
+   "text": "ship",
+   "start": 25.08,
+   "end": 25.355,
+   "syllables": [
+    25.27
+   ],
+   "chunk": 18,
+   "snapped": true
+  },
+  {
+   "text": "it",
+   "start": 25.355,
+   "end": 25.595,
+   "syllables": [
+    25.44
+   ],
+   "chunk": 18,
+   "snapped": true
+  },
+  {
+   "text": "everywhere",
+   "start": 25.595,
+   "end": 26.25,
+   "syllables": [
+    25.75,
+    25.95,
+    26.12
+   ],
+   "chunk": 18,
+   "snapped": true
+  },
+  {
+   "text": "That's",
+   "start": 27.25,
+   "end": 27.488,
+   "syllables": [
+    27.369
+   ],
+   "chunk": 19,
+   "snapped": false
+  },
+  {
+   "text": "three-sixty",
+   "start": 27.488,
+   "end": 28.2,
+   "syllables": [
+    27.606,
+    27.844,
+    28.081
    ],
    "chunk": 19,
    "snapped": false
   },
   {
    "text": "One",
-   "start": 24.68,
-   "end": 24.905,
+   "start": 28.65,
+   "end": 28.895,
    "syllables": [
-    24.77
+    28.75
    ],
    "chunk": 20,
    "snapped": true
   },
   {
-   "text": "team",
-   "start": 24.905,
-   "end": 25.31,
+   "text": "brief",
+   "start": 28.895,
+   "end": 29.32,
    "syllables": [
-    25.04
+    29.04
    ],
    "chunk": 20,
    "snapped": true
   },
   {
-   "text": "No",
-   "start": 25.57,
-   "end": 25.84,
+   "text": "the",
+   "start": 29.5,
+   "end": 29.745,
    "syllables": [
-    25.705
+    29.622
    ],
    "chunk": 21,
    "snapped": false
   },
   {
-   "text": "limits",
-   "start": 25.84,
-   "end": 26.38,
+   "text": "whole",
+   "start": 29.745,
+   "end": 29.99,
    "syllables": [
-    25.975,
-    26.245
+    29.868
    ],
    "chunk": 21,
+   "snapped": false
+  },
+  {
+   "text": "campaign",
+   "start": 29.99,
+   "end": 30.48,
+   "syllables": [
+    30.113,
+    30.358
+   ],
+   "chunk": 21,
+   "snapped": false
+  },
+  {
+   "text": "under",
+   "start": 30.66,
+   "end": 30.94,
+   "syllables": [
+    30.68,
+    30.83
+   ],
+   "chunk": 22,
+   "snapped": true
+  },
+  {
+   "text": "one",
+   "start": 30.94,
+   "end": 31.165,
+   "syllables": [
+    31.05
+   ],
+   "chunk": 22,
+   "snapped": true
+  },
+  {
+   "text": "roof",
+   "start": 31.165,
+   "end": 31.54,
+   "syllables": [
+    31.28
+   ],
+   "chunk": 22,
+   "snapped": true
+  },
+  {
+   "text": "Onemarsmedia",
+   "start": 33.24,
+   "end": 34.23,
+   "syllables": [
+    33.339,
+    33.537,
+    33.735,
+    33.933,
+    34.131
+   ],
+   "chunk": 23,
+   "snapped": false
+  },
+  {
+   "text": "One",
+   "start": 34.58,
+   "end": 34.885,
+   "syllables": [
+    34.732
+   ],
+   "chunk": 24,
+   "snapped": false
+  },
+  {
+   "text": "team",
+   "start": 34.885,
+   "end": 35.19,
+   "syllables": [
+    35.037
+   ],
+   "chunk": 24,
+   "snapped": false
+  },
+  {
+   "text": "No",
+   "start": 35.47,
+   "end": 35.747,
+   "syllables": [
+    35.608
+   ],
+   "chunk": 25,
+   "snapped": false
+  },
+  {
+   "text": "limits",
+   "start": 35.747,
+   "end": 36.3,
+   "syllables": [
+    35.885,
+    36.162
+   ],
+   "chunk": 25,
    "snapped": false
   }
  ]
