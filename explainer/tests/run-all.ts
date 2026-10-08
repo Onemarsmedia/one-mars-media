@@ -6,6 +6,7 @@
 import * as acorn from 'acorn';
 import {buildTestScene} from '../src/film/testScene';
 import {buildEditorialScene} from '../src/film/editorial/film';
+import {TILE_KEYS, validateTileAnims} from '../src/film/editorial/tiles';
 import {bezierProgress, bezierToAe, evalAeSegment} from '../src/scene/ease';
 import {springKeys} from '../src/scene/builders';
 import {compLinkCtx, evalNumber, evalVec2, isAnimated, isLinked, isLinkedVec} from '../src/scene/eval';
@@ -213,6 +214,16 @@ function roundTrip(scene: Scene, label: string) {
   }
 }
 
+section('tile animations: indices, kinds, periods', () => {
+  for (const key of TILE_KEYS) {
+    try {
+      validateTileAnims(key);
+      check(true, '');
+    } catch (e) {
+      check(false, (e as Error).message);
+    }
+  }
+});
 section('AE script guards: version, fonts, audio', () => {
   const scene = buildTestScene();
   const {jsx} = emitJsx(scene);

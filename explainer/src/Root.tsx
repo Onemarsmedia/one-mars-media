@@ -1,7 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, Composition, useCurrentFrame} from 'remotion';
 import {buildTestScene} from './film/testScene';
-import {buildReferenceScene} from './film/editorial/reference';
+import {buildReferenceScene, buildTileAnimScene} from './film/editorial/reference';
 import {buildEditorialScene} from './film/editorial/film';
 import {loadFonts} from './fonts';
 import {MotionBlur} from './render/MotionBlur';
@@ -25,6 +25,7 @@ const SceneComp: React.FC<{scene: Scene}> = ({scene}) => {
 
 const test = buildTestScene();
 const ref = buildReferenceScene();
+const tilesAnim = buildTileAnimScene();
 const film = buildEditorialScene();
 const testMain = test.comps[test.main];
 
@@ -48,6 +49,7 @@ export const Root: React.FC = () => (
       height={1080}
       defaultProps={{scene: film}}
     />
+    <Composition id="TilesAnim" component={SceneComp} durationInFrames={tilesAnim.comps[tilesAnim.main].duration} fps={60} width={1920} height={1080} defaultProps={{scene: tilesAnim}} />
     <Composition id="TilesRef" component={SceneComp} durationInFrames={1} fps={60} width={1920} height={1080} defaultProps={{scene: ref}} />
   </>
 );

@@ -2,13 +2,13 @@ import {circlePath, key} from '../../scene/builders';
 import {evalVec2} from '../../scene/eval';
 import type {AudioClip, Bezier, Comp, Key, Layer, Prop, Scene, ShapeItem, TextLayer, Transform, Vec2} from '../../scene/types';
 import metrics from './metrics.json';
-import {buildTileComp, TILE, tileInfo} from './tiles';
+import {buildTileComps, TILE, tileInfo} from './tiles';
 import plan from './timing/plan.json';
 import typeOnsets from './timing/type_onsets.json';
 import vo from './timing/vo.json';
 import {BAND_Y, BASE, BIG, C, colX, COLW, DEG_SIZE, FONT, FPS, GRID_Y0, H, L1, L2, M, ROW_GAP, RUL_H, RUL_Y, W} from './tokens';
 
-// "One brief -> the whole campaign", Editorial direction, v2 ("flowing"). 40 s, 1920x1080, 60 fps.
+// "One brief -> the whole campaign", Editorial direction, v3 ("flowing"). 42 s, 1920x1080, 60 fps.
 // The whole page (brief, grid, band, end card) lives in one WORLD precomp that a single camera
 // (null "CAMERA") flies over without a cut: slow drifts between eased moves, pushes into the two
 // hero tiles on the counter hits, one pull-back to the full wall. Only the masthead and the two
@@ -16,7 +16,7 @@ import {BAND_Y, BASE, BIG, C, colX, COLW, DEG_SIZE, FONT, FPS, GRID_Y0, H, L1, L
 // Every event comes from the edited voice-over (timing/vo.json) and the beat plan (timing/plan.json:
 // counter hits on the music grid, the music button after "No limits").
 
-export const DURATION = 40 * FPS;
+export const DURATION = 42 * FPS;
 const f = (sec: number) => Math.round(sec * FPS);
 
 // eases (CSS cubic-bezier; converted exactly to AE speed/influence)
@@ -70,7 +70,8 @@ export const S = {
   nameEnd: word('onemarsmedia').end,
   oneTeam: at(word('one', 3)),
   noLimits: at(word('no')),
-  button: plan.music.button,
+  lift: 37.1, // after the voice: the sign-off and contents give way to the final card
+  button: plan.music.button, // the music's last hit: the credits land
 };
 const ON = S.tileOn.map(f);
 // tile i is "active" (red) until the next tile lands; the last one until the wall.
@@ -103,8 +104,8 @@ const CAMERA: Cam[] = [
   {t: 27.0, c: [1854, 511], z: 326, e: MOVE},
   {t: S.wall, c: [960, 540], z: 100, e: SOFT}, // "That's three-sixty": the whole wall
   {t: 31.8, c: [960, 540], z: 101.5, e: MOVE},
-  {t: 32.6, c: [960, 540], z: 100, e: SOFT}, // the sign-off
-  {t: 40, c: [960, 540], z: 102.5},
+  {t: 32.6, c: [960, 540], z: 100, e: SOFT}, // the sign-off and the final card
+  {t: 42, c: [960, 540], z: 101.5},
 ];
 const camPos: Prop<Vec2> = {keys: CAMERA.map((k) => key(f(k.t), [-k.c[0], -k.c[1]] as Vec2, k.e))};
 const camScale: Prop<Vec2> = {keys: CAMERA.map((k) => key(f(k.t), [k.z, k.z] as Vec2, k.e))};
@@ -431,38 +432,38 @@ function indexComp(name: string, current: number): Comp {
     {kind: 'shape', name: 'column guides', items: guideItems(64, H, 6, cx)},
     {kind: 'shape', name: 'column divider', items: [rect(cx, 64, 3, H - 64, C.ink)]},
     text('THE WHOLE CAMPAIGN', 'THE WHOLE CAMPAIGN', x0, 128, FONT.sg800, 19, C.ink, {tracking: ls(3, 19)}),
-    {
-      kind: 'text',
-      name: 'count',
-      source: {kind: 'keyed', keys: [key(0, `${current} / 12`, 'hold'), key(ON[current], `${current + 1} / 12`)]},
-      font: FONT.sg800,
-      size: 19,
-      color: C.ink,
-      justify: 'right',
-      transform: {position: [x1, 128]},
-    },
   ];
-  const rh = 38;
-  const ry0 = 150;
-  const rows: ShapeItem[] = [];
-  for (let i = 0; i < 12; i++) {
-    const {num, name: nm} = tileInfo(i);
-    const y = ry0 + i * rh;
-    const done = i < current;
-    const cur = i === current;
-    if (cur) rows.push(rect(x0, y, x1 - x0, rh, C.red));
-    else rows.push(rect(x0, y + rh - 1, x1 - x0, 1, C.ink, done ? 50 : 18));
-    const col = cur || done ? C.ink : C.gr;
-    layers.push(text(`row ${num} number`, num, x0 + (cur ? 12 : 0), y + 27, FONT.sg800, 19, col));
-    layers.push(text(`row ${num} name`, tc_(nm), x0 + (cur ? 64 : 52), y + 27, cur ? FONT.sg800 : FONT.sg600, 21, col));
-    layers.push(
-      text(`row ${num} degrees`, `${String((i + 1) * 30).padStart(3, '0')}°`, x1 - (cur ? 12 : 0), y + 27, FONT.sg700, 19, col, {
-        justify: 'right',
-        transform: {position: [x1 - (cur ? 12 : 0), y + 27], opacity: done || cur ? 100 : 80},
-      }),
-    );
+  // two states that swap on the tile's hit: before (tile current-1 highlighted) and after (current)
+  const hit = ON[current];
+  for (const [state, cur, inF, outF] of [
+    ['before', current - 1, 0, hit],
+    ['now', current, hit, undefined],
+  ] as Array<[string, number, number, number | undefined]>) {
+    const rh = 38;
+    const ry0 = 150;
+    const rows: ShapeItem[] = [];
+    const span = {in: inF || undefined, out: outF};
+    layers.push(text(`${state} count`, `${cur + 1} / 12`, x1, 128, FONT.sg800, 19, C.ink, {justify: 'right', ...span}));
+    for (let i = 0; i < 12; i++) {
+      const {num, name: nm} = tileInfo(i);
+      const y = ry0 + i * rh;
+      const done = i < cur;
+      const isCur = i === cur;
+      if (isCur) rows.push(rect(x0, y, x1 - x0, rh, C.red));
+      else rows.push(rect(x0, y + rh - 1, x1 - x0, 1, C.ink, done ? 50 : 18));
+      const col = isCur || done ? C.ink : C.gr;
+      layers.push(text(`${state} row ${num} number`, num, x0 + (isCur ? 12 : 0), y + 27, FONT.sg800, 19, col, span));
+      layers.push(text(`${state} row ${num} name`, tc_(nm), x0 + (isCur ? 64 : 52), y + 27, isCur ? FONT.sg800 : FONT.sg600, 21, col, span));
+      layers.push(
+        text(`${state} row ${num} degrees`, `${String((i + 1) * 30).padStart(3, '0')}°`, x1 - (isCur ? 12 : 0), y + 27, FONT.sg700, 19, col, {
+          justify: 'right',
+          transform: {position: [x1 - (isCur ? 12 : 0), y + 27], opacity: done || isCur ? 100 : 80},
+          ...span,
+        }),
+      );
+    }
+    layers.push({kind: 'shape', name: `${state} rows`, items: rows, ...span});
   }
-  layers.splice(5, 0, {kind: 'shape', name: 'rows', items: rows});
   layers.push({kind: 'shape', name: 'column rule', items: [rect(x0, BAND_Y + 30, x1 - x0, 2.5, C.ink)]});
   layers.push(degreesLayer('360 small', W - M, BASE, (300 / DEG_SIZE) * 100));
   return {name, width: W, height: H, fps: FPS, duration: DURATION, layers};
@@ -620,26 +621,28 @@ function mastheadLayers(): Layer[] {
       in: f(0.12),
     },
     text('masthead url', 'onemarsmedia.com', W - M, 46, FONT.sg600, 19, C.gr, {justify: 'right'}, {in: 0.16, dy: 10, out: e, outDy: 10}),
+    text('masthead sign-off', 'One team. No limits.', W - M, 46, FONT.sg600, 19, C.ink, {justify: 'right'}, {in: S.button + 0.3, dy: 10}),
   ];
 }
 
-// ------------------------------------------------------------------ the sign-off (in the world)
+// ------------------------------------------------------------------ the sign-off and the final card (in the world)
 function endCardLayers(): Layer[] {
   const layers: Layer[] = [];
-  // sign-off lines wipe on with the voice; their red full stops follow
-  const line = (name: string, s: string, y: number, w: number, t: number) => {
-    layers.push(wipeMatte(`${name} wipe`, M - 12, y - BIG * 0.95, w + 24, BIG * 1.1, t, 0.45));
-    layers.push(text(name, s, M - 5, y, FONT.anton, BIG, C.ink, {in: f(t), matte: {layer: `${name} wipe`, type: 'alpha'}}));
-    layers.push(text(`${name} dot`, '.', M - 5 + w, y, FONT.anton, BIG, C.red, {}, {in: t + 0.28, inDur: 0.35, dy: 14}));
+  const lift = S.lift;
+  // sign-off lines wipe on with the voice; their red full stops follow; after the voice they lift off
+  const line = (name: string, s: string, y: number, w: number, t: number, k: number) => {
+    layers.push(wipeMatte(`${name} wipe`, M - 12, y - BIG * 1.1, w + 24, BIG * 1.3, t, 0.45));
+    layers.push(text(name, s, M - 5, y, FONT.anton, BIG, C.ink, {in: f(t), matte: {layer: `${name} wipe`, type: 'alpha'}}, {out: lift + 0.05 * k, outDur: 0.45, outDy: 30}));
+    layers.push(text(`${name} dot`, '.', M - 5 + w, y, FONT.anton, BIG, C.red, {}, {in: t + 0.28, inDur: 0.35, dy: 14, out: lift + 0.05 * k + 0.03, outDur: 0.45, outDy: 30}));
   };
-  line('One team', 'One team', L1, metrics.signoff.oneTeam, S.oneTeam);
-  line('No limits', 'No limits', L2, metrics.signoff.noLimits, S.noLimits);
-  // the whole campaign, as a contents list
+  line('One team', 'One team', L1, metrics.signoff.oneTeam, S.oneTeam, 0);
+  line('No limits', 'No limits', L2, metrics.signoff.noLimits, S.noLimits, 1);
+  // the whole campaign, as a contents list (lifts off with the sign-off)
   const x0 = colX(8);
   const x1 = W - M;
   const c0 = S.endOut + 0.65;
-  layers.push(text('end THE WHOLE CAMPAIGN', 'THE WHOLE CAMPAIGN', x0, 112, FONT.sg800, 19, C.ink, {tracking: ls(3, 19)}, {in: c0}));
-  layers.push(text('end count', '12 / 12', x1, 112, FONT.sg800, 19, C.red, {justify: 'right'}, {in: c0}));
+  layers.push(text('end THE WHOLE CAMPAIGN', 'THE WHOLE CAMPAIGN', x0, 112, FONT.sg800, 19, C.ink, {tracking: ls(3, 19)}, {in: c0, out: lift}));
+  layers.push(text('end count', '12 / 12', x1, 112, FONT.sg800, 19, C.red, {justify: 'right'}, {in: c0, out: lift}));
   for (let i = 0; i < 12; i++) {
     const {num, name} = tileInfo(i);
     const col = i < 6 ? 0 : 1;
@@ -647,16 +650,45 @@ function endCardLayers(): Layer[] {
     const x = col ? colX(10) : x0;
     const y = 160 + row * 40;
     const t = c0 + 0.08 + i * 0.035;
-    layers.push(text(`end row ${num} number`, num, x, y, FONT.sg800, 18, C.gr, {}, {in: t, dy: 12}));
-    layers.push(text(`end row ${num} name`, tc_(name), x + 38, y, FONT.sg600, 22, C.ink, {}, {in: t + 0.02, dy: 12}));
+    const o = lift + 0.03 + i * 0.02;
+    layers.push(text(`end row ${num} number`, num, x, y, FONT.sg800, 18, C.gr, {}, {in: t, dy: 12, out: o}));
+    layers.push(text(`end row ${num} name`, tc_(name), x + 38, y, FONT.sg600, 22, C.ink, {}, {in: t + 0.02, dy: 12, out: o}));
     const rw = col ? x1 - colX(10) : colX(10) - 20 - x0;
-    layers.push({kind: 'shape', name: `end row ${num} rule`, items: [rect(x, y + 14, rw, 1, C.ink, 22)], ...wipeX(x, y + 14, t, 0.45), in: f(t)});
+    const w = wipeX(x, y + 14, t, 0.45);
+    layers.push({kind: 'shape', name: `end row ${num} rule`, items: [rect(x, y + 14, rw, 1, C.ink, 22)], transform: {...w.transform, opacity: fadeOut(f(o), 0.4)}, in: f(t), out: f(o + 0.4)});
   }
   // lockup on the band: descriptor, wordmark (wipes on with the name), URL
-  layers.push(text('BRANDED CONTENT PRODUCTION', 'BRANDED CONTENT PRODUCTION, LONDON', M, BAND_Y + 48, FONT.sg800, 19, C.ink, {tracking: ls(3, 19)}, {in: S.endOut + 0.45}));
-  layers.push(wipeMatte('wordmark wipe', M - 10, 934 - 110, metrics.wordmark112 + 30, 140, S.name, 0.55));
-  layers.push(text('Onemarsmedia wordmark', 'Onemarsmedia', M - 5, 934, FONT.sg800, 112, C.ink, {tracking: ls(-3.8, 112), in: f(S.name), matte: {layer: 'wordmark wipe', type: 'alpha'}}));
+  layers.push(text('BRANDED CONTENT PRODUCTION', 'BRANDED CONTENT PRODUCTION, LONDON', M, BAND_Y + 48, FONT.sg800, 19, C.ink, {tracking: ls(3, 19)}, {in: S.endOut + 0.45, out: lift}));
+  // the final card: the wordmark rises from the band to the top of the page at twice the size...
+  const WM = 220;
+  const wmFrom: Vec2 = [M - 5, 934];
+  const wmTo: Vec2 = [M - 8, 430];
+  const a0 = f(lift + 0.15);
+  const a1 = f(S.button);
+  // the wipe matte rides with the wordmark: parented to it, in its layer space (origin = the text's baseline start)
+  layers.push({...wipeMatte('wordmark wipe', M - 10 - wmFrom[0], -110, metrics.wordmark112 + 30, 140, S.name, 0.55), parent: 'Onemarsmedia wordmark'});
+  layers.push(
+    text('Onemarsmedia wordmark', 'Onemarsmedia', M - 5, 934, FONT.sg800, 112, C.ink, {
+      tracking: ls(-3.8, 112),
+      in: f(S.name),
+      matte: {layer: 'wordmark wipe', type: 'alpha'},
+      transform: {
+        anchor: [0, 0],
+        position: {keys: [key(a0, wmFrom, MOVE), key(a1, wmTo)]},
+        scale: {keys: [key(a0, [100, 100] as Vec2, MOVE), key(a1, [(WM / 112) * 100, (WM / 112) * 100] as Vec2)]},
+      },
+    }),
+  );
   layers.push(text('onemarsmedia.com', 'onemarsmedia.com', M, BASE, FONT.sg600, 40, C.ink, {}, {in: S.nameEnd, dy: 14}));
+  // ...and the credits land on the music's last hit
+  const c = S.button;
+  const credit = (name: string, s: string, x: number, y: number, font: (typeof FONT)[keyof typeof FONT], size: number, color: string, t: number, extra: Partial<TextLayer> = {}) =>
+    layers.push(text(name, s, x, y, font, size, color, extra, {in: t, dy: 14}));
+  credit('credit PRODUCTION', 'PRODUCTION', M, 760, FONT.sg800, 17, C.gr, c, {tracking: ls(1.6, 17)});
+  credit('credit company', 'Onemarsmedia Limited', M, 806, FONT.sg700, 34, C.ink, c + 0.06);
+  credit('credit descriptor', 'Branded content production, London', M, 842, FONT.sg600, 22, C.gr, c + 0.12);
+  credit('credit DIRECTED BY', 'DIRECTED BY', colX(4), 760, FONT.sg800, 17, C.gr, c + 0.1, {tracking: ls(1.6, 17)});
+  credit('credit director', 'Marek Mars', colX(4), 806, FONT.sg700, 34, C.ink, c + 0.16);
   return layers;
 }
 
@@ -664,7 +696,7 @@ function endCardLayers(): Layer[] {
 export function buildEditorialScene(): Scene {
   const comps: Record<string, Comp> = {};
   const add = (c: Comp) => (comps[c.name] = c);
-  for (let i = 0; i < 12; i++) add(buildTileComp(i, DURATION, FPS, {on: ON[i], activeOff: ACTIVE_OFF[i]}));
+  for (let i = 0; i < 12; i++) buildTileComps(i, DURATION, FPS, {on: ON[i], activeOff: ACTIVE_OFF[i], loopEnd: f(waveOut(i) + 0.4)}).forEach(add);
   add(degreesComp());
   add(bandStatusComp());
   add(bandComp());
@@ -707,9 +739,11 @@ export function buildEditorialScene(): Scene {
       {t: f(S.halfway), label: "That's halfway: the counter"},
       {t: ON[8], label: '270'},
       {t: ON[11], label: '360 lock / music in / DISTRIBUTION hero'},
-      {t: f(S.wall), label: 'Full wall (poster frame)'},
+      {t: f(S.wall), label: 'Full wall'},
+      {t: posterFrame(), label: 'Poster frame (website)'},
       {t: T.endOut, label: 'Sign-off'},
-      {t: T.button, label: 'Music button'},
+      {t: f(S.lift), label: 'Final card: the wordmark rises'},
+      {t: T.button, label: 'Music button: credits'},
     ],
     layers: [
       {kind: 'null', name: 'CAMERA', transform: {anchor: [0, 0], position: [W / 2, H / 2], scale: camScale}, label: 2},
@@ -777,6 +811,7 @@ export function sfxCues(): Array<{file: string; t: number; gainDb: number}> {
     {file: 'whoosh.wav', t: 25.1 + 0.25, gainDb: -31},
     {file: 'lock.wav', t: HIT[360], gainDb: -20},
     {file: 'whoosh.wav', t: 27.0 + 0.45, gainDb: -30},
+    {file: 'whoosh.wav', t: S.lift + 0.3, gainDb: -33},
     {file: 'tap.wav', t: S.oneTeam, gainDb: -28},
     {file: 'tap.wav', t: S.noLimits, gainDb: -28},
   ];

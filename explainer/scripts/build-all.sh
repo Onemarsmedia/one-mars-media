@@ -5,7 +5,7 @@
 set -euo pipefail
 A=assets/audio
 W=work
-DUR=40
+DUR=42
 mkdir -p $W/vo $W/music
 python3 -I audio/align.py $A/vo2_joshua_take3.mp3 $A/vo2_script.txt $W/vo/align.json
 python3 -I audio/plan_timing.py $W/vo/align.json $A/plan_config.json $W/vo

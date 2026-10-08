@@ -1,5 +1,5 @@
 // Captions from the edited VO: one cue per sentence (short neighbours merged), at most two lines,
-// broken at a sentence end when one fits, otherwise at the most balanced clause; no 1-frame gaps.
+// broken at a sentence end when one fits, otherwise at the most balanced clause; gaps under 0.5 s closed.
 //   npx tsx scripts/captions.ts <vo.json> <duration s> <out captions.json>
 import fs from 'node:fs';
 
@@ -45,7 +45,8 @@ function lines(parts: string[]): string {
 }
 const cues = merged.map((q, i) => {
   const next = merged[i + 1];
-  const end = next && next.start - (q.end + 0.35) < 0.1 ? next.start : Math.min(q.end + 0.35, dur);
+  // run straight on into the next cue when the gap would be short (no blink between sentences)
+  const end = next && next.start - (q.end + 0.35) < 0.5 + 1e-9 ? next.start : Math.min(q.end + 0.35, dur);
   return {start: q.start, end, text: lines(q.parts)};
 });
 fs.writeFileSync(out, JSON.stringify({cues}, null, 1));
