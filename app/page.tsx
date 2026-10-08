@@ -45,9 +45,11 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="explainer" className="pb-24 px-4 sm:px-6 lg:px-8">
+        <section id="explainer" aria-labelledby="explainer-title" className="pb-24 px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
-            <p className="text-sm uppercase tracking-[0.35em] text-gray-500 mb-6 text-center">Onemarsmedia in 30 seconds</p>
+            <h2 id="explainer-title" className="text-sm font-normal uppercase tracking-[0.35em] text-gray-500 mb-6 text-center">
+              Onemarsmedia in 40 seconds
+            </h2>
             <ExplainerVideo />
           </div>
         </section>

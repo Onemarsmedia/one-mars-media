@@ -25,15 +25,8 @@ fs.writeFileSync('work/mix.json', JSON.stringify({duration: dur,
   vo: {file: 'vo/vo_edit.wav', start: vo.offset, gainDb: 0},
   music: {file: 'music/music_edit.wav', start: 0, gainDb: -8, envelope: [[0, 3], [plan.hits['360'] - 0.02, -3]], duck: {threshold: 0.03, ratio: 4, attack: 15, release: 280}},
   sfx: sfxCues().map((c) => ({...c, file: '../assets/audio/sfx/' + c.file}))}, null, 1));
-// captions: one cue per sentence (merged when short), broken onto two lines at a clause, no 1-frame gaps
-const cues = []; let cur = [];
-for (const c of vo.chunks) { cur.push(c); if (c.punct.startsWith('.')) { cues.push({start: cur[0].start, end: cur[cur.length - 1].end, parts: cur.map((x) => x.text + x.punct)}); cur = []; } }
-const merged = [];
-for (const q of cues) { const m = merged[merged.length - 1]; const len = (x) => x.parts.join(' ').length; if (m && len(m) + len(q) <= 42 && q.start - m.end < 0.6) Object.assign(m, {end: q.end, parts: [...m.parts, ...q.parts]}); else merged.push({...q}); }
-const lines = (parts) => { const t = parts.join(' '); if (t.length <= 37) return t; let best = 1, score = 1e9; for (let i = 1; i < parts.length; i++) { const a = parts.slice(0, i).join(' ').length, b = parts.slice(i).join(' ').length; if (Math.abs(a - b) < score) { score = Math.abs(a - b); best = i; } } return parts.slice(0, best).join(' ') + '\n' + parts.slice(best).join(' '); };
-const out = merged.map((q, i) => ({start: q.start, end: merged[i + 1] && merged[i + 1].start - (q.end + 0.35) < 0.1 ? merged[i + 1].start : Math.min(q.end + 0.35, dur), text: lines(q.parts)}));
-fs.writeFileSync('work/captions.json', JSON.stringify({cues: out}, null, 1));
 "
+npx tsx scripts/captions.ts src/film/editorial/timing/vo.json $DUR $W/captions.json
 python3 -I audio/mix.py $W/mix.json $W/mixout
 npx tsx tests/run-all.ts
 node scripts/render.mjs Onemarsmedia360 out/final --audio $W/mixout/master.wav --poster-frame "$(npx tsx -e "import {posterFrame} from './src/film/editorial/film'; console.log(posterFrame())")" --captions $W/captions.json

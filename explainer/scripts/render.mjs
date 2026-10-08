@@ -10,6 +10,7 @@ import {renderMedia, renderStill, selectComposition} from '@remotion/renderer';
 import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import {writeVtt} from './vtt.mjs';
 
 const BROWSER = '/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell';
 const args = process.argv.slice(2);
@@ -55,32 +56,6 @@ if (posterFrame !== undefined) {
   fs.rmSync(png);
 }
 
-if (captions) {
-  // Either ready-made cues [{start, end, text}] (film seconds) or aligned words to group by sentence.
-  const data = JSON.parse(fs.readFileSync(captions, 'utf8'));
-  const {words = [], offset = 0} = data;
-  const ts = (s) => {
-    const ms = Math.max(0, Math.round((s + offset) * 1000));
-    const h = String(Math.floor(ms / 3600000)).padStart(2, '0');
-    const m = String(Math.floor(ms / 60000) % 60).padStart(2, '0');
-    const sec = String(Math.floor(ms / 1000) % 60).padStart(2, '0');
-    return `${h}:${m}:${sec}.${String(ms % 1000).padStart(3, '0')}`;
-  };
-  const cues = [];
-  let cur = [];
-  for (const w of words) {
-    cur.push(w);
-    if (/[.!?]$/.test(w.text) || w.end - cur[0].start > 3.2) {
-      cues.push(cur);
-      cur = [];
-    }
-  }
-  if (cur.length) cues.push(cur);
-  const lines = data.cues
-    ? data.cues.map((c, i) => [String(i + 1), `${ts(c.start)} --> ${ts(c.end)}`, c.text, ''])
-    : cues.map((c, i) => [String(i + 1), `${ts(c[0].start)} --> ${ts(c[c.length - 1].end + 0.25)}`, c.map((w) => w.text).join(' '), '']);
-  const vtt = ['WEBVTT', ''].concat(lines.flat());
-  fs.writeFileSync(path.join(outDir, `${id}.en.vtt`), vtt.join('\n'));
-}
+if (captions) writeVtt(captions, path.join(outDir, `${id}.en.vtt`));
 
 for (const f of fs.readdirSync(outDir)) console.log(' ', f, `${(fs.statSync(path.join(outDir, f)).size / 1e6).toFixed(2)} MB`);
