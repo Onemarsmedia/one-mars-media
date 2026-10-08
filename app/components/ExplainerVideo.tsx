@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-// 42-second explainer: poster frame with a play button; one click starts it with sound.
-// Files are versioned (public/video is cached as immutable), so a new cut ships as -v4.
-const SRC = '/video/onemarsmedia-360-v3.mp4';
-const SRC_720 = '/video/onemarsmedia-360-720-v3.mp4'; // phones: same film at 720p, under half the size
-const POSTER = '/video/onemarsmedia-360-poster-v3.webp';
-const CAPTIONS = '/video/onemarsmedia-360-v3.en.vtt';
+// 54-second explainer: poster frame with a play button; one click starts it with sound.
+// Files are versioned (public/video is cached as immutable), so a new cut ships as -v6.
+const SRC = '/video/onemarsmedia-360-v5.mp4';
+const SRC_720 = '/video/onemarsmedia-360-720-v5.mp4'; // phones: same film at 720p, under half the size
+const POSTER = '/video/onemarsmedia-360-poster-v5.webp';
+const CAPTIONS = '/video/onemarsmedia-360-v5.en.vtt';
 
 export default function ExplainerVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -84,8 +84,8 @@ export default function ExplainerVideo() {
               <path d="M8 5.5v13l11-6.5z" />
             </svg>
             <span className="text-sm font-semibold sm:text-base">
-              {failed ? 'Try again' : 'Watch · 0:42'}
-              <span className="sr-only"> the Onemarsmedia explainer, 42 seconds, with sound</span>
+              {failed ? 'Try again' : 'Watch · 0:54'}
+              <span className="sr-only"> the Onemarsmedia explainer, 54 seconds, with sound</span>
             </span>
           </span>
           {failed && (
