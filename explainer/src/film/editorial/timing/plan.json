@@ -12,13 +12,13 @@
   "segments": [
    {
     "src_start": 0.0,
-    "src_end": 36.0,
+    "src_end": 34.0,
     "film_start": 2.08
    },
    {
-    "src_start": 42.0,
+    "src_start": 40.0,
     "src_end": 48.0,
-    "film_start": 38.08
+    "film_start": 36.08
    }
   ],
   "button": 38.08

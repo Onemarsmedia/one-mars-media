@@ -4,14 +4,15 @@
 Counter hits must land on beats. Each hit names a word (+ syllable) and the pause that may move
 to put it on the grid (a section-transition pause, so sentences keep their rhythm). The first hit
 defines the grid phase. The music's big section (a downbeat at config.music.big_entry in the
-source) lands on the last hit; the music "buttons" (cuts to its ending) a whole number of bars later.
+source) lands on the last hit; the music "buttons" (its stop at config.music.ending) a whole number of
+bars later, with the last ending_bars bars before the stop played in full.
 
 Usage: python3 -I plan_timing.py take.align.json config.json out_dir
 config.json: {
   "offset": 2.2, "beat": 0.5, "bar": 2.0, "lead": 0.04, "keep": 0.06,
   "gaps": [...one per chunk boundary...],
   "hits": [{"deg": 90, "word": "shoot", "syl": 0, "gap": null, "min": 0, "max": 0}, ...],
-  "music": {"big_entry": 24.0, "ending": 42.0, "tail": 6.0, "button_bars": [5, 4, 6], "latest_button": 38.2}
+  "music": {"big_entry": 24.0, "ending": 42.0, "tail": 6.0, "ending_bars": 1, "button_bars": [5, 4, 6], "latest_button": 38.2}
 }
 Writes out_dir/gaps.json, out_dir/plan.json
 """
@@ -78,15 +79,17 @@ def main(align_path, cfg_path, out_dir):
     if button is None:
         raise SystemExit("no musical button fits before latest_button")
     vo_end = starts[-1] + chunks[-1]["end"] - chunks[-1]["start"]
+    pre = m.get("ending_bars", 0) * bar
     plan = {
         "offset": off,
         "beat": beat,
         "grid0": round(grid0, 3),
         "hits": hits,
         "music": {
+            # the last `ending_bars` bars before the source's stop play in full, so the stop lands on the button
             "segments": [
-                {"src_start": round(src_start, 3), "src_end": round(m["big_entry"] + (button - last), 3), "film_start": round(music_film_start, 3)},
-                {"src_start": m["ending"], "src_end": m["ending"] + m["tail"], "film_start": round(button, 3)},
+                {"src_start": round(src_start, 3), "src_end": round(m["big_entry"] + (button - last) - pre, 3), "film_start": round(music_film_start, 3)},
+                {"src_start": m["ending"] - pre, "src_end": m["ending"] + m["tail"], "film_start": round(button - pre, 3)},
             ],
             "button": round(button, 3),
         },

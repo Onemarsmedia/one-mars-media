@@ -1,4 +1,5 @@
 import {circlePath, key} from '../../scene/builders';
+import {bezierProgress} from '../../scene/ease';
 import {evalVec2} from '../../scene/eval';
 import type {AudioClip, Bezier, Comp, Key, Layer, Prop, Scene, ShapeItem, TextLayer, Transform, Vec2} from '../../scene/types';
 import metrics from './metrics.json';
@@ -84,8 +85,8 @@ export const T = {tileOn: ON, brk: f(S.brk), endOut: f(S.endOut), button: f(S.bu
 type Cam = {t: number; c: Vec2; z: number; e?: Bezier};
 const CAMERA: Cam[] = [
   {t: 0, c: [960, 540], z: 100, e: SOFT}, // slow push while the brief is typed (headline and memo stay in frame)
-  {t: 3.4, c: [955, 530], z: 102.5, e: SOFT},
-  {t: 5.6, c: [958, 522], z: 104.5, e: MOVE},
+  {t: 3.4, c: [955, 532], z: 101.5, e: SOFT},
+  {t: 5.6, c: [958, 528], z: 102.5, e: MOVE},
   {t: 7.2, c: [960, 540], z: 100, e: SOFT}, // out to the page as the brief breaks into the grid
   {t: 8.6, c: [960, 540], z: 101.5, e: MOVE},
   {t: 9.8, c: [540, 300], z: 172, e: SOFT}, // "It starts with the idea": row 1, left
@@ -94,18 +95,18 @@ const CAMERA: Cam[] = [
   {t: 13.2, c: [952, 236], z: 326, e: MOVE},
   {t: 14.3, c: [1310, 300], z: 172, e: SOFT}, // "Then we shape it": row 1, right
   {t: 16.3, c: [1370, 290], z: 176, e: MOVE},
-  {t: 17.1, c: [1452, 845], z: 205, e: SOFT}, // "That's halfway": the counter
-  {t: 17.9, c: [1452, 845], z: 210, e: MOVE},
-  {t: 19.0, c: [540, 620], z: 172, e: SOFT}, // "Now take it everywhere": row 2 + the status line
-  {t: 22.2, c: [600, 620], z: 176, e: MOVE},
-  {t: 23.0, c: [1310, 620], z: 172, e: SOFT}, // row 2, right
-  {t: 25.1, c: [1362, 612], z: 175.5, e: PUSH},
+  {t: 17.1, c: [1452, 868], z: 205, e: SOFT}, // "That's halfway": the counter (row 2 kept clear of the masthead)
+  {t: 17.9, c: [1452, 868], z: 210, e: MOVE},
+  {t: 19.0, c: [640, 674], z: 150, e: SOFT}, // "Now take it everywhere": row 2 with the status line and the ruler
+  {t: 22.2, c: [690, 672], z: 153, e: MOVE},
+  {t: 23.0, c: [1250, 674], z: 150, e: SOFT}, // row 2, right, with the whole counter
+  {t: 25.1, c: [1290, 672], z: 153, e: PUSH},
   {t: S.tileOn[11], c: [1854, 511], z: 320, e: SOFT}, // 360: DISTRIBUTION hero
   {t: 27.0, c: [1854, 511], z: 326, e: MOVE},
   {t: S.wall, c: [960, 540], z: 100, e: SOFT}, // "That's three-sixty": the whole wall
   {t: 31.8, c: [960, 540], z: 101.5, e: MOVE},
-  {t: 32.6, c: [960, 540], z: 100, e: SOFT}, // the sign-off and the final card
-  {t: 42, c: [960, 540], z: 101.5},
+  {t: 32.6, c: [960, 540], z: 100}, // the sign-off and the final card: the camera rests, page and masthead share the margins
+  {t: 42, c: [960, 540], z: 100},
 ];
 const camPos: Prop<Vec2> = {keys: CAMERA.map((k) => key(f(k.t), [-k.c[0], -k.c[1]] as Vec2, k.e))};
 const camScale: Prop<Vec2> = {keys: CAMERA.map((k) => key(f(k.t), [k.z, k.z] as Vec2, k.e))};
@@ -443,6 +444,7 @@ function indexComp(name: string, current: number): Comp {
     const ry0 = 150;
     const rows: ShapeItem[] = [];
     const span = {in: inF || undefined, out: outF};
+    const rowsAt = layers.length; // the rows (and the red highlight) sit under this state's texts
     layers.push(text(`${state} count`, `${cur + 1} / 12`, x1, 128, FONT.sg800, 19, C.ink, {justify: 'right', ...span}));
     for (let i = 0; i < 12; i++) {
       const {num, name: nm} = tileInfo(i);
@@ -462,7 +464,7 @@ function indexComp(name: string, current: number): Comp {
         }),
       );
     }
-    layers.push({kind: 'shape', name: `${state} rows`, items: rows, ...span});
+    layers.splice(rowsAt, 0, {kind: 'shape', name: `${state} rows`, items: rows, ...span});
   }
   layers.push({kind: 'shape', name: 'column rule', items: [rect(x0, BAND_Y + 30, x1 - x0, 2.5, C.ink)]});
   layers.push(degreesLayer('360 small', W - M, BASE, (300 / DEG_SIZE) * 100));
@@ -471,8 +473,8 @@ function indexComp(name: string, current: number): Comp {
 
 /** The contents columns slide in from the right edge and back out (seconds). */
 const SLIDES: Array<[string, number, number]> = [
-  ['INDEX 03 FILMING', S.tileOn[2] - 0.55, 13.2],
-  ['INDEX 12 DISTRIBUTION', S.tileOn[11] - 0.55, 27.6],
+  ['INDEX 03 FILMING', S.tileOn[2] - 0.4, 13.2],
+  ['INDEX 12 DISTRIBUTION', S.tileOn[11] - 0.4, 27.6],
 ];
 function slideKeys(tIn: number, tOut: number): Prop<Vec2> {
   const off: Vec2 = [W - 1200 + 40, 0];
@@ -792,26 +794,41 @@ export function motionAmount(t: number): number {
   return m;
 }
 
-/** Motion-blur samples per frame for the Remotion render: about one sample per 3 px of motion. */
+/** Motion-blur samples per frame for the Remotion render: about one sample per 1.5 px of motion. */
 export function blurSamples(): number[] {
-  return Array.from({length: DURATION}, (_, t) => Math.max(1, Math.min(24, Math.ceil(motionAmount(t) / 3))));
+  return Array.from({length: DURATION}, (_, t) => Math.max(1, Math.min(32, Math.ceil(motionAmount(t) / 1.5))));
 }
 
 /** Poster frame for the website: the whole wall, all 12 live, counter at 360. */
 export const posterFrame = () => f(30.05);
 
+/** Time (s) of the fastest point of an eased move. */
+function fastest(e: Bezier, t0: number, t1: number): number {
+  let best = 0;
+  let at = 0;
+  for (let k = 1; k < 200; k++) {
+    const v = bezierProgress(e, (k + 0.5) / 200) - bezierProgress(e, (k - 0.5) / 200);
+    if (v > best) [best, at] = [v, k / 200];
+  }
+  return t0 + (t1 - t0) * at;
+}
+const WHOOSH_PEAK = 0.52; // s into whoosh.wav
+const whoosh = (t: number, gainDb: number) => ({file: 'whoosh.wav', t: t - WHOOSH_PEAK, gainDb});
+
 /** SFX cue list for the mix (seconds), derived from the same timeline. */
 export function sfxCues(): Array<{file: string; t: number; gainDb: number}> {
+  const cam = (t: number) => CAMERA.findIndex((k) => k.t === t);
+  const move = (t: number) => fastest(CAMERA[cam(t)].e!, t, CAMERA[cam(t) + 1].t);
   return [
     {file: 'type.wav', t: S.typeStart, gainDb: -20},
-    {file: 'whoosh.wav', t: S.brk - 0.1, gainDb: -32},
+    whoosh(fastest([0.55, 0, 0.1, 1], S.brk, S.brk + SLICE_DUR), -32),
     ...S.tileOn.map((t) => ({file: 'tap.wav', t, gainDb: -27})),
-    ...[HIT[90], HIT[180], HIT[270]].map((t) => ({file: 'flap.wav', t, gainDb: -27})),
-    {file: 'whoosh.wav', t: 11.2 + 0.2, gainDb: -31},
-    {file: 'whoosh.wav', t: 25.1 + 0.25, gainDb: -31},
+    {file: 'flap.wav', t: HIT[90], gainDb: -27}, // the 180 and 270 steps happen off screen: no flap there
+    whoosh(move(11.2), -31),
+    whoosh(move(25.1), -31),
     {file: 'lock.wav', t: HIT[360], gainDb: -20},
-    {file: 'whoosh.wav', t: 27.0 + 0.45, gainDb: -30},
-    {file: 'whoosh.wav', t: S.lift + 0.3, gainDb: -33},
+    whoosh(move(27.0), -30),
+    whoosh(fastest(MOVE, S.lift + 0.15, S.button), -33),
     {file: 'tap.wav', t: S.oneTeam, gainDb: -28},
     {file: 'tap.wav', t: S.noLimits, gainDb: -28},
   ];

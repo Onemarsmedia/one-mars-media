@@ -22,8 +22,8 @@ const dur = DURATION / FPS;
 const plan = JSON.parse(fs.readFileSync('src/film/editorial/timing/plan.json', 'utf8'));
 const vo = JSON.parse(fs.readFileSync('src/film/editorial/timing/vo.json', 'utf8'));
 fs.writeFileSync('work/mix.json', JSON.stringify({duration: dur,
-  vo: {file: 'vo/vo_edit.wav', start: vo.offset, gainDb: 0},
-  music: {file: 'music/music_edit.wav', start: 0, gainDb: -8, envelope: [[0, 3], [plan.hits['360'] - 0.02, -3]], duck: {threshold: 0.03, ratio: 4, attack: 15, release: 280}},
+  vo: {file: 'vo/vo_edit.wav', start: vo.offset, gainDb: 0, compress: {threshold: 0.1, ratio: 3, attack: 10, release: 150}},
+  music: {file: 'music/music_edit.wav', start: 0, gainDb: -8, envelope: [[0, 3], [plan.hits['360'] - 0.02, -3]], duck: {threshold: 0.03, ratio: 3, attack: 20, release: 800}},
   sfx: sfxCues().map((c) => ({...c, file: '../assets/audio/sfx/' + c.file}))}, null, 1));
 "
 npx tsx scripts/captions.ts src/film/editorial/timing/vo.json $DUR $W/captions.json

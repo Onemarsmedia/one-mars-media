@@ -18,7 +18,9 @@ for (const key of order) {
   lines.push(`  ${key}: [`);
   for (const a of t.anims) {
     if (a.why) lines.push(wrap(String(a.why), '    '));
-    const parts = KEYS.filter((k) => a[k] !== undefined && a[k] !== null).map((k) => `${k}: ${JSON.stringify(a[k])}`.replace(/"([a-z]+)"(?=,|$)/g, "'$1'"));
+    const parts = KEYS.filter((k) => a[k] !== undefined && a[k] !== null).map((k) =>
+      `${k}: ${JSON.stringify(a[k])}`.replace(/"([a-z]+)"(?=,|$)/g, "'$1'").replace(/,(?=[-0-9[])/g, ', '),
+    );
     lines.push(`    {${parts.join(', ')}},`);
   }
   lines.push('  ],');

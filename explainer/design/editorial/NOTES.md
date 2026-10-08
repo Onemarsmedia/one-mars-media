@@ -65,6 +65,20 @@ Big Shoulders Display was tested and rejected: the variable instance renders ove
 3. **Split-flap seam.** A paper-coloured bar cuts through the digits at half cap-height. It is the hinge of the flap.
 4. **Ruler.** 12 segments, one per tile, 30° each, so 12 × 30° = 360°. Segments go ink as tiles go live, red for the active one, and stay hairline while waiting. The tile tags "+30°" and the f2 contents list (030°…360°) repeat the same arithmetic.
 
+## v3 additions (client feedback on v2: "flows now; the pictures should move; the end card must say who we are")
+- **Living tiles.** Each illustration is its own precomp with a slow 3 % push-in and one clear hero motion plus
+  one or two quiet ones (tileAnims.ts): the brief line types, storyboard arrows draw, the viewfinder blinks REC and
+  runs timecode while the focus box breathes, clips drop onto the timeline and the playhead loops, the bezier dot
+  rides its curve, swatches land, waveform bars pump, likes swell, the CTA pulses, the swipe card tilts, the prompt
+  types and the selection hops between variations, distribution arrows draw to the formats. Restraint: small
+  amplitudes, staggered periods, nothing in sync on the wall.
+- **Headers land softly.** The rule wipes (red and ink alike), number/label/tag rise in with a 2-frame stagger,
+  the reserved slot's outline header fades out at once.
+- **Final card (42 s).** After the voice, the sign-off and contents lift off, the wordmark rises from the band
+  to the top of the page at twice the size, and on the music's stop the credits land: PRODUCTION
+  Onemarsmedia Limited / Branded content production, London; DIRECTED BY Marek Mars; onemarsmedia.com.
+  The masthead's right slot reads "One team. No limits." The camera rests on the end card.
+
 ## Motion v2: "one camera, one page" (supersedes the v1 signature below)
 Client feedback on v1: the look is right, but the hard cuts feel choppy and stiff. v2 keeps the palette,
 type, grid, tiles and 360° device, and changes only how things move. 40 s, 60 fps, motion blur (180°).

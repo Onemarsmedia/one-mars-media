@@ -42,17 +42,17 @@ const loud = JSON.parse(fs.readFileSync(path.join(mixDir, 'loudness.json'), 'utf
 const headroom = Math.max(0, loud.gain_db - loud.stem_gain_db).toFixed(1).replace('.', ',');
 const headroomEn = Math.max(0, loud.gain_db - loud.stem_gain_db).toFixed(1);
 const secs = Math.round(main.duration / main.fps);
-const nFonts = scene.fonts.length;
 
 const pl = `Onemarsmedia 360 - projekt After Effects
 After Effects 2023 lub nowszy (przygotowane pod AE 2025/2026). Bez pluginów.
 
 JAK OTWORZYĆ
-1. Zainstaluj fonty z folderu "fonts": zaznacz wszystkie ${nFonts} pliki > prawy przycisk > Zainstaluj.
-   Anton i Schibsted Grotesk są darmowe (licencja OFL). Potem uruchom ponownie After Effects.
+1. Zainstaluj fonty z folderu "fonts": zaznacz wszystkie pliki z folderu > prawy przycisk > Zainstaluj
+   (Mac: dwuklik na pliku > Zainstaluj czcionkę). Anton i Schibsted Grotesk są darmowe (licencja OFL).
+   Potem uruchom ponownie After Effects.
 2. File > Scripts > Run Script File... > wybierz "build-onemarsmedia-360.jsx".
-   Folder "audio" musi leżeć obok skryptu. Na pytanie o nowy, pusty projekt odpowiedz "Tak".
-   Budowanie trwa ok. 1-3 min.
+   Folder "audio" musi leżeć obok skryptu. Gdy skrypt zapyta o nowy, pusty projekt
+   ("...into a new, empty project?"), kliknij "Yes". Budowanie trwa ok. 1-3 min.
 3. Na końcu pojawi się komunikat. Zapisz projekt: File > Save As > Save As... (Ctrl+Shift+S / Cmd+Shift+S).
    Jeśli komunikat wymienia podmienione fonty: zainstaluj je, uruchom AE ponownie i zbuduj projekt jeszcze raz
    (samo ponowne otwarcie projektu nie naprawi tekstów).
@@ -69,10 +69,15 @@ CO JEST W ŚRODKU
   Suwak steruje cyframi, ich wypełnieniem i pierścieniem.
   Uwaga: kafle, suwak "Tiles" (w "BAND STATUS"), napis "Now:" i linijka mają własne klatki kluczowe.
   Przy zmianie tempa przesuń je razem z kluczami suwaka "Degrees".
-- Kafle: "TILE 01 CONCEPT" ... "TILE 12 DISTRIBUTION". Każdy kafel ma trzy stany: pusty, aktywny (czerwony)
-  i gotowy. Wyjątek: 03 FILMING to ciemny panel bez stanu czerwonego.
-  Drobne pętle (mrugające REC, timecode, playheady, kursor) są na osobnych warstwach "loop".
+- Kafle: "TILE 01 CONCEPT" ... "TILE 12 DISTRIBUTION". Każdy kafel ma trzy stany: pusty (empty),
+  aktywny, czerwony (active) i gotowy (live). Wyjątek: 03 FILMING to ciemny panel bez stanu czerwonego.
+- Ilustracje kafli są w osobnych prekompozycjach, np. "TILE 03 FILMING | live" i "TILE 03 FILMING | active".
+  W środku: null "... push-in" (powolny najazd na całą ilustrację) i warstwy animacji nazwane od rodzaju ruchu
+  ("... blink 20", "... pulse 16+17+18+19", "... draw 27", "... loop 132+133" itd.).
+  Timecode w FILMING to klatki kluczowe Source Text na warstwie "03 FILMING | live loop timecode".
 - Brief: prekompozycja "BRIEF TYPE" i 12 warstw "brief slice" z track matte. To one rozlatują się na miejsca kafli.
+- Plansza końcowa: logo słowne "Onemarsmedia wordmark" rośnie z pasa na górę strony,
+  a na ostatnie uderzenie muzyki wchodzą napisy ("credit company", "credit director" itd.).
 - Audio: warstwa "Mix (final, -14 LUFS)" to gotowy miks, ten sam co w MP4.
   Stemy (lektor, muzyka, SFX) są wyłączone. Włącz je, jeśli chcesz zrobić własny miks: są bez limitera
   i ściszone o ${headroom} dB względem miksu, żeby ich suma nie przesterowywała.
@@ -85,10 +90,10 @@ const en = `Onemarsmedia 360 - After Effects project
 After Effects 2023 or newer (prepared for AE 2025/2026). No plugins.
 
 HOW TO OPEN
-1. Install the fonts in "fonts": select all ${nFonts} files > right-click > Install.
+1. Install the fonts in "fonts": select all the files > right-click > Install (Mac: double-click > Install Font).
    Anton and Schibsted Grotesk are free (OFL). Then restart After Effects.
 2. File > Scripts > Run Script File... > "build-onemarsmedia-360.jsx".
-   Keep the "audio" folder next to the script. When asked about a new, empty project, answer Yes.
+   Keep the "audio" folder next to the script. When the script asks about a new, empty project, click "Yes".
    The build takes about 1-3 minutes.
 3. A message appears at the end. Save: File > Save As > Save As... (Ctrl+Shift+S / Cmd+Shift+S).
    If the message lists substituted fonts: install them, restart AE and build again
@@ -98,7 +103,7 @@ WHAT IS INSIDE
 - Main comp "Onemarsmedia 360": ${secs} s, 1920x1080, ${main.fps} fps, scene markers, motion blur on.
 - Everything is native and editable: shape layers, text, keyframes.
 - Camera: null "CAMERA" (scale = zoom) and the precomp "WORLD" (position = framing).
-  The whole page (brief, tiles, counter band, sign-off) lives in "WORLD".
+  The whole page (brief, tiles, counter band, final card) lives in "WORLD".
   Change the camera move in one place: Scale on "CAMERA" and Position on "WORLD" (same key times).
 - Fixed to the screen: only the masthead and the "INDEX 03 FILMING" / "INDEX 12 DISTRIBUTION" columns,
   which slide in from the right.
@@ -107,12 +112,17 @@ WHAT IS INSIDE
   Note: the tiles, the "Tiles" slider (in "BAND STATUS"), the "Now:" text and the ruler have their own keyframes.
   To change the pace, move them together with the "Degrees" keys.
 - Tiles: "TILE 01 CONCEPT" ... "TILE 12 DISTRIBUTION". Each tile has three states: empty, active (red)
-  and done. Exception: 03 FILMING is the dark panel and has no red state.
-  The micro-loops (REC blink, timecode, playheads, cursor) sit on separate "loop" layers.
+  and live. Exception: 03 FILMING is the dark panel and has no red state.
+- The tile illustrations are precomps of their own, e.g. "TILE 03 FILMING | live" and "TILE 03 FILMING | active".
+  Inside: a "... push-in" null (a slow push on the whole illustration) and animation layers named by their move
+  ("... blink 20", "... pulse 16+17+18+19", "... draw 27", "... loop 132+133" and so on).
+  The FILMING timecode is Source Text keyframes on "03 FILMING | live loop timecode".
 - Brief: precomp "BRIEF TYPE" and 12 "brief slice" layers with track mattes; they fly to the tile slots.
+- Final card: the "Onemarsmedia wordmark" rises from the band to the top of the page, and the credits
+  ("credit company", "credit director" ...) land on the music's last hit.
 - Audio: the "Mix (final, -14 LUFS)" layer is the finished mix, the same as in the MP4.
-  The stems (VO, music, SFX) are switched off. Turn them on for your own mix: they are unlimited
-  and ${headroomEn} dB below the mix, so their sum does not clip.
+  The stems (VO, music, SFX) are switched off. Turn them on for your own mix: they have no limiter
+  and sit ${headroomEn} dB below the mix, so their sum does not clip.
 
 9:16 OR ANOTHER FORMAT
 Create a new comp and drag the precomps you need from the Project panel

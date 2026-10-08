@@ -56,7 +56,10 @@ def main(cfg_path, out_dir):
     # 1) VO stem
     vo = cfg["vo"]
     vo_raw = os.path.join(tmp, "vo.wav")
-    run(["ffmpeg", "-v", "error", "-y", "-i", p(vo["file"]), "-af", place(vo["file"], vo["start"], vo.get("gainDb", 0)), "-ar", str(RATE), *F32, vo_raw])
+    # optional VO compression before the bus, so the master limiter only shaves the last 1-2 dB
+    comp = vo.get("compress")
+    vo_comp = f",acompressor=threshold={comp['threshold']}:ratio={comp['ratio']}:attack={comp['attack']}:release={comp['release']}:knee=2" if comp else ""
+    run(["ffmpeg", "-v", "error", "-y", "-i", p(vo["file"]), "-af", place(vo["file"], vo["start"], vo.get("gainDb", 0), vo_comp), "-ar", str(RATE), *F32, vo_raw])
 
     # 2) Music stem, ducked by the VO stem
     music_raw = None
@@ -106,7 +109,7 @@ def main(cfg_path, out_dir):
     # Keep true peak under the ceiling: if the gain would push peaks over, a limiter catches the master only.
     peak_after = tp_in + gain
     # sample-peak ceiling 0.6 dB under the true-peak target leaves room for inter-sample peaks
-    limiter = f",alimiter=limit={10 ** ((TARGET_TP - 0.6) / 20):.4f}:attack=5:release=50:level=disabled" if peak_after > TARGET_TP - 0.6 else ""
+    limiter = f",alimiter=limit={10 ** ((TARGET_TP - 0.6) / 20):.4f}:attack=5:release=50:level=disabled:latency=1" if peak_after > TARGET_TP - 0.6 else ""
 
     master = os.path.join(out_dir, "master.wav")
     # The limiter lowers loudness a little; re-measure and nudge the gain until we land on target.

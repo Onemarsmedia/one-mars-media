@@ -13,5 +13,5 @@
   {"deg": 270, "word": "site", "syl": 0, "gap": 11, "min": 0.7, "max": 1.5},
   {"deg": 360, "word": "everywhere", "syl": 2, "nth": 1, "gap": 15, "min": 0.45, "max": 1.2}
  ],
- "music": {"big_entry": 24.0, "ending": 42.0, "tail": 6.0, "button_bars": [6, 5], "latest_button": 38.4}
+ "music": {"big_entry": 24.0, "ending": 42.0, "tail": 6.0, "ending_bars": 1, "button_bars": [6, 5], "latest_button": 38.4}
 }

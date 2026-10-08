@@ -222,6 +222,14 @@ function animLayers(a: Exclude<TileAnim, {kind: 'type' | 'timecode'}>, L: Look, 
     }
     case 'drift':
       return [shape(name, items, {position: {keys: [{t: t0, v: [0, 0]}, {t: t1, v: [a.dx, a.dy ?? 0]}]}})];
+    case 'loop': {
+      // plays forward by dx over each period, then jumps back (a playhead looping a section)
+      const keys: Key<Vec2>[] = [];
+      const P = F(a.period);
+      for (let t = t0 + F(a.delay ?? 0.4); t + P <= t1; t += P) keys.push({t, v: [0, 0]}, {t: t + P - 1, v: [a.dx, 0], ease: 'hold'});
+      if (keys.length) delete keys[keys.length - 1].ease;
+      return [shape(name, items, {position: keys.length > 1 ? {keys} : [0, 0]})];
+    }
     case 'pulse': {
       const pv = a.pivot ?? centre(bbox(items));
       const keys: Key<Vec2>[] = [];
@@ -341,6 +349,7 @@ function buildLookComp(i: number, look: 'live' | 'active', duration: number, fps
     const tl = textLayer(t, `${base} text ${k + 1}`, timing ? {parent: ZOOM} : {});
     const a = anims.find((x) => (x.kind === 'type' || x.kind === 'timecode') && x.text === k);
     if (a?.kind === 'timecode') {
+      tl.name = `${base} loop timecode`;
       const keys: Key<string>[] = [];
       for (let n = 0, f = t0; f < t1; n++, f = t0 + Math.round((n * fps) / a.rate)) keys.push({t: f, v: addFrames(t.text, n, a.rate), ease: 'hold'});
       delete keys[keys.length - 1].ease;
@@ -374,8 +383,15 @@ export function buildTileComps(i: number, duration: number, fps: number, timing?
 
   // EMPTY look (reserved slot) until the panel has wiped on
   if (timing) {
-    layers.push({kind: 'shape', name: `${pre} | empty`, items: lookItems(a.empty.items), out: on + WIPE_PANEL, label: 16});
-    a.empty.texts.forEach((t, k) => layers.push({...textLayer(t, `${pre} | empty text ${k + 1}`), out: on + WIPE_PANEL, label: 16}));
+    const gone = Math.round(0.15 * fps);
+    const fadeAway: Num = {keys: [{t: on, v: 100, ease: [0.4, 0, 0.6, 1]}, {t: on + gone, v: 0}]};
+    layers.push({kind: 'shape', name: `${pre} | empty panel`, items: lookItems(a.empty.items, (it) => !isHeader(it)), out: on + WIPE_PANEL, label: 16});
+    layers.push({kind: 'shape', name: `${pre} | empty rule`, items: lookItems(a.empty.items, isHeader), transform: {opacity: fadeAway}, out: on + gone, label: 16});
+    a.empty.texts.forEach((t, k) => {
+      const tl = textLayer(t, `${pre} | empty text ${k + 1}`);
+      const head = t.y <= TILE.head;
+      layers.push({...tl, ...(head ? {transform: {...tl.transform, opacity: fadeAway}, out: on + gone} : {out: on + WIPE_PANEL}), label: 16});
+    });
   }
   // Panel wipe matte: grows from the top edge of the panel down
   layers.push({
@@ -427,7 +443,7 @@ export function buildTileComps(i: number, duration: number, fps: number, timing?
       transform: {
         anchor: [0, 0],
         position: [0, 0],
-        scale: timing && look === 'live' ? {keys: [{t: inF, v: [0, 100], ease: ruleEase}, {t: inF + WIPE_RULE, v: [100, 100]}]} : [100, 100],
+        scale: timing ? {keys: [{t: inF, v: [0, 100], ease: ruleEase}, {t: inF + WIPE_RULE, v: [100, 100]}]} : [100, 100],
         opacity: fades ? fadeOut() : undefined,
       },
       in: inF,
@@ -436,7 +452,25 @@ export function buildTileComps(i: number, duration: number, fps: number, timing?
     });
     L.texts
       .filter((t) => t.y <= TILE.head)
-      .forEach((t, k) => layers.push({...withFade(textLayer(t, `${pre} | ${look} head ${k + 1}`)), in: inF, out: outF, label: lbl}));
+      .forEach((t, k) => {
+        const tl = textLayer(t, `${pre} | ${look} head ${k + 1}`);
+        if (!timing) return layers.push({...tl, in: inF, out: outF, label: lbl});
+        const base = typeof tl.transform?.opacity === 'number' ? tl.transform.opacity : 100;
+        const t0 = inF + Math.round((k * 2 * fps) / 60);
+        const opacity: Key<number>[] = [
+          {t: t0, v: 0, ease: SOFT},
+          {t: t0 + Math.round(0.22 * fps), v: base},
+        ];
+        if (fades) opacity.push({t: off, v: base, ease: [0.4, 0, 0.6, 1]}, {t: off + FADE, v: 0});
+        const p = tl.transform!.position as Vec2;
+        layers.push({
+          ...tl,
+          transform: {...tl.transform, opacity: {keys: opacity}, position: {keys: [{t: t0, v: [p[0], p[1] + 6], ease: OUT}, {t: t0 + Math.round(0.3 * fps), v: p}]}},
+          in: inF,
+          out: outF,
+          label: lbl,
+        });
+      });
   }
   return [{name: `TILE ${pre}`, width: TILE.w, height: Math.ceil(TILE.h), fps, duration, layers}, ...comps];
 }

@@ -173,12 +173,30 @@ class Emitter {
     return order;
   }
 
+  /** "comp/layer" of layers whose position, scale or rotation jumps on a hold key. */
+  private holdJumpLayers(): string[] {
+    const out: string[] = [];
+    const jumps = (p: unknown) => {
+      if (!p || typeof p !== 'object' || Array.isArray(p) || !Array.isArray((p as {keys?: unknown}).keys)) return false;
+      const keys = (p as {keys: Array<{v: unknown; ease?: unknown}>}).keys;
+      return keys.some((k, i) => k.ease === 'hold' && i < keys.length - 1 && JSON.stringify(k.v) !== JSON.stringify(keys[i + 1].v));
+    };
+    for (const c of Object.values(this.scene.comps))
+      for (const l of c.layers) {
+        const tr = l.transform ?? {};
+        if (jumps(tr.position) || jumps(tr.scale) || jumps(tr.rotation)) out.push(`${c.name}/${l.name}`);
+      }
+    return out;
+  }
+
   emit(): EmitResult {
     const s = this.scene;
     const order = this.compOrder();
     this.out(PRELUDE);
     this.out(`var FONTS = ${lit(s.fonts.map((f) => f.postscript))};`);
-    this.out('checkFonts(FONTS);');
+    this.out(`var NOBLUR = {${this.holdJumpLayers().map((n) => `${jsStr(n)}: 1`).join(', ')}};`);
+    this.out('if (!checkFonts(FONTS)) return;');
+    this.out(START);
     for (const name of order) {
       const c = s.comps[name];
       const isMain = name === s.main;
@@ -479,19 +497,7 @@ var COMPS = {};
 var MISSING_FONTS = [];
 var MISSING_AUDIO = [];
 var BUILT = false;
-if (app.project.numItems > 0 && confirm("Build the Onemarsmedia 360 project into a new, empty project? (recommended)")) {
-  if (!app.newProject()) return;
-}
-// match the MP4: 8 bpc, sRGB blending
-app.project.bitsPerChannel = 8;
-app.project.linearBlending = false;
-app.beginUndoGroup("Build Onemarsmedia 360");
-try {
-var ROOT_FOLDER = app.project.items.addFolder("Onemarsmedia 360");
-var MAIN_FOLDER = ROOT_FOLDER;
-var PRECOMP_FOLDER = app.project.items.addFolder("Precomps");
-PRECOMP_FOLDER.parentFolder = ROOT_FOLDER;
-var AUDIO_FOLDER = null;
+var ROOT_FOLDER = null, MAIN_FOLDER = null, PRECOMP_FOLDER = null, AUDIO_FOLDER = null;
 
 var IT = {L: KeyframeInterpolationType.LINEAR, B: KeyframeInterpolationType.BEZIER, H: KeyframeInterpolationType.HOLD};
 
@@ -511,7 +517,7 @@ function noteFont(ps) {
 }
 function checkFonts(list) {
   for (var i = 0; i < list.length; i++) if (!fontOk(list[i])) noteFont(list[i]);
-  if (MISSING_FONTS.length && !confirm("These fonts are not installed:\n" + MISSING_FONTS.join("\n") + "\n\nInstall them from the fonts folder, restart After Effects and run the script again.\nBuild anyway with substitute fonts?")) throw new Error("ABORT");
+  return !MISSING_FONTS.length || confirm("These fonts are not installed:\n" + MISSING_FONTS.join("\n") + "\n\nInstall them from the fonts folder, restart After Effects and run the script again.\nBuild anyway with substitute fonts?");
 }
 function mkComp(name, w, h, dur, fps, bg, folder) {
   var c = app.project.items.addComp(name, w, h, 1, dur, fps);
@@ -736,12 +742,33 @@ function motionBlur(comp, angle, phase, samples) {
   comp.motionBlurSamplesPerFrame = samples;
   for (var i = 1; i <= comp.numLayers; i++) {
     var l = comp.layer(i);
-    if (l.hasVideo) l.motionBlur = true;
+    // layers that jump on hold keys stay sharp (a blurred jump would ghost the previous position)
+    if (l.hasVideo && !NOBLUR[comp.name + "/" + l.name]) l.motionBlur = true;
   }
 }
 function finish(main) {
   main.openInViewer();
 }
+`;
+
+// Runs after the font check: new project (asked), colour settings for a fresh project, undo group, folders.
+const START = String.raw`
+var FRESH = false;
+if (app.project.numItems > 0 && confirm("Build the Onemarsmedia 360 project into a new, empty project? (recommended)")) {
+  if (!app.newProject()) return;
+  FRESH = true;
+}
+app.beginUndoGroup("Build Onemarsmedia 360");
+try {
+// match the MP4 (8 bpc, sRGB blending), but never change the settings of a project that already has work in it
+if (FRESH || app.project.numItems === 0) {
+  app.project.bitsPerChannel = 8;
+  app.project.linearBlending = false;
+}
+ROOT_FOLDER = app.project.items.addFolder("Onemarsmedia 360");
+MAIN_FOLDER = ROOT_FOLDER;
+PRECOMP_FOLDER = app.project.items.addFolder("Precomps");
+PRECOMP_FOLDER.parentFolder = ROOT_FOLDER;
 `;
 
 const POSTLUDE = String.raw`
