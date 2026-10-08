@@ -5,9 +5,10 @@
 //     property evaluates to the scene's value at every frame; text expressions match too.
 import * as acorn from 'acorn';
 import {buildTestScene} from '../src/film/testScene';
+import {buildEditorialScene} from '../src/film/editorial/film';
 import {bezierProgress, bezierToAe, evalAeSegment} from '../src/scene/ease';
 import {springKeys} from '../src/scene/builders';
-import {compLinkCtx, evalNumber, evalVec2, isAnimated, isLinked} from '../src/scene/eval';
+import {compLinkCtx, evalNumber, evalVec2, isAnimated, isLinked, isLinkedVec} from '../src/scene/eval';
 import {textAt} from '../src/scene/text';
 import type {Bezier, Num, Prop, Scene, TextLayer, Vec2} from '../src/scene/types';
 import {emitJsx} from '../ae/emit-jsx';
@@ -128,7 +129,7 @@ function roundTrip(scene: Scene, label: string) {
     check(!!mc, `${label}: comp ${c.name} created`);
     if (!mc) continue;
     const expectedTopDown = [...c.layers].reverse().map((l) => l.name);
-    const got = mc.layerList.filter((l) => l.name !== 'Background').map((l) => l.name);
+    const got = mc.layerList.filter((l) => l.name !== 'Background' && l.kind !== 'footage').map((l) => l.name);
     check(JSON.stringify(got) === JSON.stringify(expectedTopDown), `${label}: ${c.name} layer order ${got} vs ${expectedTopDown}`);
     for (const l of c.layers) {
       const ml = mc.layerList.find((m) => m.name === l.name)!;
@@ -142,13 +143,16 @@ function roundTrip(scene: Scene, label: string) {
   for (const m of manifest) {
     const p = findProperty(run, m.path);
     const comp = Object.values(scene.comps).find((c) => m.path.startsWith(c.name + '/'))!;
-    if (isLinked(m.prop)) {
+    if (isLinked(m.prop) || isLinkedVec(m.prop)) {
       check(p.expression.length > 0 && p.keys.length === 0, `${label}: ${m.path} should be driven by an expression`);
       const layerName = m.path.split('/')[1];
       for (let f = 0; f <= comp.duration; f++) {
-        const got = Number(evalExpr(p.expression, exprEnv(run, comp.name, layerName, f / comp.fps), p.value));
-        const want = evalNumber(m.prop as Num, f, 0, compLinkCtx(comp));
-        if (Math.abs(got - want) > 2e-3) {
+        const raw = evalExpr(p.expression, exprEnv(run, comp.name, layerName, f / comp.fps), p.value);
+        const gotArr = Array.isArray(raw) ? (raw as number[]) : [Number(raw)];
+        const wantArr = isLinkedVec(m.prop) ? evalVec2(m.prop, f, [0, 0], compLinkCtx(comp)) : [evalNumber(m.prop as Num, f, 0, compLinkCtx(comp))];
+        const got = gotArr.join(',');
+        const want = wantArr.join(',');
+        if (gotArr.some((g, d) => Math.abs(g - wantArr[d]) > 2e-3)) {
           check(false, `${label}: ${m.path} @${f}: expression ${got} vs scene ${want}`);
           break;
         }
@@ -178,6 +182,22 @@ function roundTrip(scene: Scene, label: string) {
       if (l.source.kind === 'static') continue;
       const mc = run.comps.find((x) => x.name === c.name)!;
       const ml = mc.layerList.find((x) => x.name === l.name)!;
+      if (l.source.kind === 'keyed') {
+        const tp = (ml.property('ADBE Text Properties') as unknown as {property(k: string): MockProperty}).property('ADBE Text Document');
+        for (let f = 0; f <= c.duration; f++) {
+          const tSec = f / c.fps;
+          let k = tp.keys[0];
+          for (const kk of tp.keys) if (tSec >= kk.t - 1e-6) k = kk;
+          const got = (k.v as {text: string}).text.replace(/\r/g, '\n');
+          const want = textAt(l.source, f);
+          if (got !== want) {
+            check(false, `${label}: ${l.name} @${f} keyed text "${got}" vs "${want}"`);
+            break;
+          }
+          check(true, '');
+        }
+        continue;
+      }
       const td = (ml.property('ADBE Text Properties') as unknown as {property(k: string): {expression: string; value: {text: string}}}).property('ADBE Text Document');
       check(td.expression.length > 0, `${label}: ${l.name} has a Source Text expression`);
       for (let f = 0; f <= c.duration; f++) {
@@ -194,6 +214,7 @@ function roundTrip(scene: Scene, label: string) {
 }
 
 section('AE round trip: test scene', () => roundTrip(buildTestScene(), 'test scene'));
+section('AE round trip: Editorial film (every frame)', () => roundTrip(buildEditorialScene(), 'film'));
 
 console.log(`\n${checks} checks, ${failures} failed`);
 process.exit(failures ? 1 : 0);

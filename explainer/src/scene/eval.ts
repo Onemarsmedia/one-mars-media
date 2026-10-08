@@ -1,5 +1,5 @@
 import {bezierProgress} from './ease';
-import type {Animated, Color, Comp, Key, Linked, Num, Prop, Vec2} from './types';
+import type {Animated, Color, Comp, Key, Linked, LinkedVec2, Num, Prop, Vec2} from './types';
 
 export function isAnimated<T>(p: Prop<T> | undefined): p is Animated<T> {
   return typeof p === 'object' && p !== null && !Array.isArray(p) && 'keys' in (p as object);
@@ -56,8 +56,17 @@ export function evalNumber(p: Num | undefined, t: number, fallback: number, ctx?
   return a + (b - a) * q;
 }
 
-export function evalVec2(p: Prop<Vec2> | undefined, t: number, fallback: Vec2): Vec2 {
+export function isLinkedVec(p: unknown): p is LinkedVec2 {
+  return typeof p === 'object' && p !== null && 'linkVec' in (p as object);
+}
+
+export function evalVec2(p: Prop<Vec2> | LinkedVec2 | undefined, t: number, fallback: Vec2, ctx?: LinkCtx): Vec2 {
   if (p === undefined) return fallback;
+  if (isLinkedVec(p)) {
+    if (!ctx) throw new Error('Linked property evaluated without a comp context');
+    const s = ctx(p.linkVec.layer, p.linkVec.slider, t);
+    return [applyLink({layer: '', slider: '', ...p.linkVec.x}, s), applyLink({layer: '', slider: '', ...p.linkVec.y}, s)];
+  }
   if (!isAnimated(p)) return p;
   const {i, p: q} = locate(p.keys, t);
   const a = p.keys[i].v;

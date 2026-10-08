@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import ExplainerVideo from './components/ExplainerVideo';
 
 export default function Home() {
   return (
@@ -41,6 +42,13 @@ export default function Home() {
                 Book a call
               </a>
             </motion.div>
+          </div>
+        </section>
+
+        <section id="explainer" className="pb-24 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto">
+            <p className="text-sm uppercase tracking-[0.35em] text-gray-500 mb-6 text-center">Onemarsmedia in 30 seconds</p>
+            <ExplainerVideo />
           </div>
         </section>
 

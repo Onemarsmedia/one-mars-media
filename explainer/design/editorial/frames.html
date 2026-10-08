@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Onemarsmedia 360 — Editorial styleframes</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:#F1ECE2}
+  #stage{position:relative;width:1920px;height:1080px;overflow:hidden}
+  svg{display:block}
+  text{font-kerning:normal}
+  .tn{font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+window.__ready = false;
+
+/* ------------------------------------------------------------------ *
+ *  DESIGN TOKENS
+ * ------------------------------------------------------------------ */
+const W = 1920, H = 1080, M = 64;
+const C = {
+  paper: '#F1ECE2',   // ground
+  p2:    '#E3DBCB',   // tile panel / secondary paper
+  soft:  '#CBC1AE',   // tertiary (text-line placeholders, empty fills)
+  ink:   '#121110',   // ink black
+  gr:    '#6E675D',   // graphite (secondary text)
+  red:   '#FF4A1C',   // REC red-orange — the one loud accent
+  dk2:   '#2A2724',   // dark panel secondary
+};
+const FD = 'Anton';
+const FL = "'Schibsted Grotesk'";
+
+/* grid: 12 columns, 20px gutter -> col 131px; a tile = 2 cols + 1 gutter = 282px */
+const COLW = 131, GUT = 20;
+const colX = k => M + k * (COLW + GUT);
+
+/* ------------------------------------------------------------------ *
+ *  SVG HELPERS
+ * ------------------------------------------------------------------ */
+const attr = o => Object.entries(o).filter(([, v]) => v !== undefined && v !== null)
+  .map(([k, v]) => `${k.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}="${v}"`).join(' ');
+const R  = (x, y, w, h, o = {}) => `<rect ${attr({ x, y, width: w, height: h, ...o })}/>`;
+const L  = (x1, y1, x2, y2, o = {}) => `<line ${attr({ x1, y1, x2, y2, ...o })}/>`;
+const P  = (d, o = {}) => `<path ${attr({ d, ...o })}/>`;
+const Ci = (cx, cy, r, o = {}) => `<circle ${attr({ cx, cy, r, ...o })}/>`;
+const T  = (x, y, s, o = {}) => `<text ${attr({ x, y, ...o })}>${s}</text>`;
+const G  = (inner, o = {}) => `<g ${attr(o)}>${inner}</g>`;
+let _id = 0; const uid = p => `${p}${++_id}`;
+const lab = (size, weight = 800, extra = {}) => ({ fontFamily: FL, fontWeight: weight, fontSize: size, ...extra });
+const disp = (size, extra = {}) => ({ fontFamily: FD, fontSize: size, ...extra });
+
+/* seeded random for waveforms */
+function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+
+/* text measurement (canvas) */
+const _cv = document.createElement('canvas').getContext('2d');
+function measure(str, font) { _cv.font = font; return _cv.measureText(str); }
+
+/* ------------------------------------------------------------------ *
+ *  TILE THEMES (colour roles inside a tile's art panel)
+ * ------------------------------------------------------------------ */
+const TH = {
+  light:  { bg: C.p2,  ln: C.ink,   fa: C.paper, fb: C.ink,   acc: C.red,   mut: C.gr,      soft: C.soft,   kvBg: C.paper },
+  dark:   { bg: C.ink, ln: C.paper, fa: C.dk2,   fb: C.paper, acc: C.red,   mut: '#958C7F', soft: '#4A453F', kvBg: C.p2 },
+  active: { bg: C.red, ln: C.ink,   fa: C.paper, fb: C.ink,   acc: C.paper, mut: '#6A2212', soft: '#F7A58B', kvBg: C.paper },
+};
+
+/* ------------------------------------------------------------------ *
+ *  KEY VISUAL — the campaign's own artwork (disc rising over a horizon).
+ *  Re-used inside many tiles so the 12 read as ONE campaign.
+ * ------------------------------------------------------------------ */
+function kv(x, y, w, h, c, v = 0, stroke = 0) {
+  const id = uid('kv');
+  const s = Math.min(w, h);
+  const vars = [
+    { dx: .60, dy: .46, r: .30, g: .70 },
+    { dx: .34, dy: .40, r: .26, g: .66 },
+    { dx: .50, dy: .58, r: .36, g: .74 },
+    { dx: .70, dy: .34, r: .22, g: .62 },
+  ];
+  const k = vars[v % 4];
+  const gy = y + h * k.g;
+  let inner = R(x, y, w, h, { fill: c.kvBg });
+  inner += Ci(x + w * k.dx, y + h * k.dy, s * k.r, { fill: c.acc === C.paper ? C.red : C.red });
+  // ground with a single launch "ramp"
+  inner += P(`M${x} ${gy} L${x + w * .52} ${gy} L${x + w} ${gy - h * .16} L${x + w} ${y + h} L${x} ${y + h} Z`, { fill: C.ink });
+  let out = `<clipPath id="${id}"><rect x="${x}" y="${y}" width="${w}" height="${h}"/></clipPath>` + G(inner, { clipPath: `url(#${id})` });
+  if (stroke) out += R(x, y, w, h, { fill: 'none', stroke: c.ln, strokeWidth: stroke });
+  return out;
+}
+
+/* ------------------------------------------------------------------ *
+ *  THE 12 TILE ARTWORKS — each draws into a 400 x 280 art panel
+ * ------------------------------------------------------------------ */
+const AW = 400, AH = 280;
+
+const ART = {
+  /* 01 CONCEPT — brief card with the key line highlighted + moodboard */
+  concept(c) {
+    let s = '';
+    s += R(22, 22, 222, 236, { fill: c.fa, stroke: c.ln, strokeWidth: 4 });
+    s += T(42, 60, 'BRIEF', lab(21, 800, { fill: c.ln, letterSpacing: 2 }));
+    s += T(224, 60, 'v1', lab(16, 700, { fill: c.mut, textAnchor: 'end' }));
+    s += L(42, 74, 224, 74, { stroke: c.ln, strokeWidth: 2.5 });
+    s += R(42, 90, 168, 9, { fill: c.soft }) + R(42, 108, 136, 9, { fill: c.soft });
+    s += R(36, 128, 196, 36, { fill: C.red });
+    s += T(46, 153, 'Make it land.', lab(20, 800, { fill: C.ink }));
+    s += R(42, 180, 170, 9, { fill: c.soft }) + R(42, 198, 150, 9, { fill: c.soft }) + R(42, 216, 112, 9, { fill: c.soft });
+    // moodboard
+    s += kv(262, 22, 118, 78, c, 0, 2.5);
+    s += R(262, 110, 54, 70, { fill: c.fb });
+    s += T(289, 160, 'Aa', disp(32, { fill: c.bg === C.ink ? C.ink : C.paper, textAnchor: 'middle' }));
+    s += R(326, 110, 54, 70, { fill: C.red });
+    const hid = uid('h');
+    s += `<clipPath id="${hid}"><rect x="262" y="190" width="118" height="68"/></clipPath>`;
+    let hatch = '';
+    for (let i = -80; i < 140; i += 12) hatch += L(262 + i, 258, 262 + i + 68, 190, { stroke: c.ln, strokeWidth: 2 });
+    s += R(262, 190, 118, 68, { fill: c.fa }) + G(hatch, { clipPath: `url(#${hid})` }) + R(262, 190, 118, 68, { fill: 'none', stroke: c.ln, strokeWidth: 2.5 });
+    return s;
+  },
+
+  /* 02 STORYBOARD — three sketched panels with arrows */
+  storyboard(c) {
+    /* a 2 x 2 storyboard sheet: four 16:9 sketch panels, numbered, with shot names */
+    let s = '';
+    const pw = 168, ph = 94, gx = 36, x0 = 14, ys = [14, 148];
+    const lbl = ['WIDE', 'PUSH IN', 'REVEAL', 'END FRAME'];
+    const sk = { stroke: c.ln, strokeWidth: 3, fill: 'none', strokeLinejoin: 'miter' };
+    for (let i = 0; i < 4; i++) {
+      const x = x0 + (i % 2) * (pw + gx), y = ys[Math.floor(i / 2)];
+      const id = uid('sb');
+      let inner = R(x, y, pw, ph, { fill: c.fa });
+      if (i === 0) {          // wide: horizon, sun, small figure
+        inner += L(x, y + 68, x + pw, y + 68, { stroke: c.ln, strokeWidth: 3 });
+        inner += Ci(x + 122, y + 34, 15, sk);
+        inner += Ci(x + 48, y + 42, 8, { fill: c.ln });
+        inner += P(`M${x + 37} ${y + 68} L${x + 40} ${y + 54} L${x + 56} ${y + 54} L${x + 59} ${y + 68} Z`, { fill: c.ln });
+      } else if (i === 1) {   // push-in on the presenter, red camera-move arrows
+        inner += Ci(x + pw / 2, y + 40, 17, { fill: c.ln });
+        inner += P(`M${x + pw / 2 - 40} ${y + ph} C${x + pw / 2 - 38} ${y + 70} ${x + pw / 2 - 22} ${y + 62} ${x + pw / 2} ${y + 62} C${x + pw / 2 + 22} ${y + 62} ${x + pw / 2 + 38} ${y + 70} ${x + pw / 2 + 40} ${y + ph} Z`, { fill: c.ln });
+        const a = (x1, y1, dx, dy) => L(x1, y1, x1 + dx * 18, y1 + dy * 18, { stroke: C.red, strokeWidth: 4 }) +
+          P(`M${x1 + dx * 18 - dx * 10} ${y1 + dy * 18} H${x1 + dx * 18} V${y1 + dy * 18 - dy * 10}`, { stroke: C.red, strokeWidth: 4, fill: 'none' });
+        inner += a(x + 12, y + 12, 1, 1) + a(x + pw - 12, y + 12, -1, 1) + a(x + 12, y + ph - 12, 1, -1) + a(x + pw - 12, y + ph - 12, -1, -1);
+      } else if (i === 2) {   // reveal: the disc rising behind the ramp (sketch), up arrow
+        inner += Ci(x + pw * .6, y + 72, 30, { ...sk, strokeDasharray: '7 5' });
+        inner += P(`M${x} ${y + 72} L${x + pw * .52} ${y + 72} L${x + pw} ${y + 56} L${x + pw} ${y + ph} L${x} ${y + ph} Z`, { fill: c.ln });
+        inner += L(x + 40, y + 52, x + 40, y + 16, { stroke: c.ln, strokeWidth: 3.5 }) + P(`M${x + 31} ${y + 25} L${x + 40} ${y + 16} L${x + 49} ${y + 25}`, { ...sk, strokeWidth: 3.5 });
+      } else {
+        inner += kv(x, y, pw, ph, c, 0);
+      }
+      s += `<clipPath id="${id}"><rect x="${x}" y="${y}" width="${pw}" height="${ph}"/></clipPath>` + G(inner, { clipPath: `url(#${id})` });
+      s += R(x, y, pw, ph, { fill: 'none', stroke: c.ln, strokeWidth: 3 });
+      s += T(x, y + ph + 24, `0${i + 1}`, lab(17, 800, { fill: c.ln }));
+      s += T(x + 30, y + ph + 24, lbl[i], lab(15, 700, { fill: c.mut, letterSpacing: 1 }));
+      if (i % 2 === 0) {      // cut arrow to the next panel
+        const ax = x + pw + 6, ay = y + ph / 2;
+        s += L(ax, ay, ax + gx - 13, ay, { stroke: c.ln, strokeWidth: 3 }) +
+          P(`M${ax + gx - 20} ${ay - 7} L${ax + gx - 12} ${ay} L${ax + gx - 20} ${ay + 7}`, { stroke: c.ln, strokeWidth: 3, fill: 'none' });
+      }
+    }
+    return s;
+  },
+
+  /* 03 FILMING — camera viewfinder: REC, timecode, framing guides */
+  filming(c) {
+    let s = '';
+    const id = uid('vf');
+    let scene = '';
+    // set: red backdrop disc, presenter in medium close-up on the right third
+    scene += Ci(146, 120, 58, { fill: C.red });
+    // presenter, medium close-up: neck, squared shoulders, open collar
+    scene += R(238, 132, 28, 72, { fill: '#B9AF9C' });
+    scene += P('M146 286 C148 228 164 202 202 190 L237 172 L252 200 L267 172 L302 190 C340 202 356 228 358 286 Z', { fill: C.p2 });
+    scene += P('M237 172 L223 183 L243 214 L252 200 Z M267 172 L281 183 L261 214 L252 200 Z', { fill: C.paper });
+    scene += Ci(252, 114, 36, { fill: C.p2 });
+    s += `<clipPath id="${id}"><rect x="0" y="0" width="${AW}" height="${AH}"/></clipPath>` + G(scene, { clipPath: `url(#${id})` });
+    // rule of thirds
+    const g = { stroke: C.paper, strokeOpacity: .3, strokeWidth: 1.4 };
+    s += L(133.3, 0, 133.3, AH, g) + L(266.6, 0, 266.6, AH, g) + L(0, 93.3, AW, 93.3, g) + L(0, 186.6, AW, 186.6, g);
+    // corner brackets
+    const b = { stroke: C.paper, strokeWidth: 4.5, fill: 'none', strokeLinecap: 'square' };
+    const i = 18, l = 30;
+    s += P(`M${i} ${i + l} V${i} H${i + l}`, b) + P(`M${AW - i - l} ${i} H${AW - i} V${i + l}`, b) +
+         P(`M${i} ${AH - i - l} V${AH - i} H${i + l}`, b) + P(`M${AW - i - l} ${AH - i} H${AW - i} V${AH - i - l}`, b);
+    // focus box on the face
+    const f = { stroke: C.red, strokeWidth: 3.2, fill: 'none', strokeLinecap: 'square' };
+    const fx = 206, fy = 68, fs = 92, fl = 15;
+    s += P(`M${fx} ${fy + fl} V${fy} H${fx + fl}`, f) + P(`M${fx + fs - fl} ${fy} H${fx + fs} V${fy + fl}`, f) +
+         P(`M${fx} ${fy + fs - fl} V${fy + fs} H${fx + fl}`, f) + P(`M${fx + fs - fl} ${fy + fs} H${fx + fs} V${fy + fs - fl}`, f);
+    // REC + timecode
+    s += Ci(48, 50, 7.5, { fill: C.red });
+    s += T(62, 56.5, 'REC', lab(18, 800, { fill: C.paper, letterSpacing: 1 }));
+    s += T(352, 56.5, '00:00:09:14', lab(17, 700, { fill: C.paper, textAnchor: 'end', class: 'tn' }));
+    // bottom: audio meters + format + battery
+    s += T(40, 216, '4K  25P', lab(13, 800, { fill: C.paper, letterSpacing: 1 }));
+    s += T(40, 237, 'CH1', lab(11, 700, { fill: C.paper, fillOpacity: .7 })) + T(40, 253, 'CH2', lab(11, 700, { fill: C.paper, fillOpacity: .7 }));
+    s += R(68, 229, 70, 6, { fill: C.paper, fillOpacity: .25 }) + R(68, 229, 52, 6, { fill: C.paper });
+    s += R(68, 245, 70, 6, { fill: C.paper, fillOpacity: .25 }) + R(68, 245, 42, 6, { fill: C.paper });
+    // battery: top-right under the timecode, clear of the presenter
+    s += R(319, 68, 30, 15, { fill: 'none', stroke: C.paper, strokeWidth: 2 }) + R(349, 73, 3.5, 5, { fill: C.paper }) + R(323, 72, 18, 7, { fill: C.paper });
+    return s;
+  },
+
+  /* 04 EDITING — NLE timeline, coloured clips, playhead */
+  editing(c) {
+    let s = '';
+    const x0 = 56, x1 = 386;
+    // ruler
+    s += L(x0, 40, x1, 40, { stroke: c.ln, strokeWidth: 2 });
+    for (let x = x0, k = 0; x <= x1; x += 16.5, k++) s += L(x, k % 4 === 0 ? 26 : 33, x, 40, { stroke: c.ln, strokeWidth: k % 4 === 0 ? 2 : 1.2 });
+    const tr = [['V2', 54], ['V1', 106], ['A1', 158], ['A2', 210]];
+    tr.forEach(([n, y]) => {
+      s += T(16, y + 29, n, lab(15, 800, { fill: c.ln }));
+      s += R(x0, y, x1 - x0, 44, { fill: c.fa });
+    });
+    // V2 title clip
+    s += R(176, 58, 98, 36, { fill: C.red }) + T(184, 81, 'TITLE', lab(12, 800, { fill: C.ink, letterSpacing: 1 }));
+    // V1 picture clips
+    [[60, 90, c.fb], [154, 70, c.soft], [228, 104, c.fb], [336, 46, c.soft]].forEach(([x, w, f]) => {
+      s += R(x, 110, w, 36, { fill: f });
+      s += R(x + 6, 116, 20, 14, { fill: f === c.fb ? c.fa : c.fb, fillOpacity: .9 });
+    });
+    // A1 voice clip + waveform
+    s += R(60, 162, 252, 36, { fill: c.fa, stroke: c.ln, strokeWidth: 2.5 });
+    const r1 = rng(7); for (let x = 68; x < 306; x += 6) { const h = 4 + r1() * 22; s += R(x, 180 - h / 2, 3, h, { fill: c.ln }); }
+    // A2 music clip
+    s += R(60, 214, 322, 36, { fill: c.soft });
+    const r2 = rng(3); for (let x = 68; x < 376; x += 6) { const h = 6 + r2() * 12; s += R(x, 232 - h / 2, 3, h, { fill: c.mut }); }
+    // playhead
+    s += L(252, 30, 252, 258, { stroke: C.red, strokeWidth: 3.5 });
+    s += P('M243 14 H261 V26 L252 35 L243 26 Z', { fill: C.red });
+    return s;
+  },
+
+  /* 05 MOTION — graph editor: eased bezier, keyframes, handles */
+  motion(c) {
+    let s = '';
+    const gx0 = 44, gx1 = 384, gy0 = 30, gy1 = 236;
+    for (let x = gx0; x <= gx1; x += 34) s += L(x, gy0, x, gy1, { stroke: c.ln, strokeOpacity: .12, strokeWidth: 1.2 });
+    for (let y = gy1; y >= gy0; y -= 34.33) s += L(gx0, y, gx1, y, { stroke: c.ln, strokeOpacity: .12, strokeWidth: 1.2 });
+    s += L(gx0, gy1, gx1, gy1, { stroke: c.ln, strokeWidth: 2.5 }) + L(gx0, gy0, gx0, gy1, { stroke: c.ln, strokeWidth: 2.5 });
+    const A = [gx0 + 4, 222], B = [196, 222], Cc = [214, 50], D = [gx1 - 6, 50];
+    s += L(A[0], A[1], B[0], B[1], { stroke: c.ln, strokeWidth: 1.8 }) + L(D[0], D[1], Cc[0], Cc[1], { stroke: c.ln, strokeWidth: 1.8 });
+    s += R(B[0] - 5, B[1] - 5, 10, 10, { fill: c.fa, stroke: c.ln, strokeWidth: 2 }) + R(Cc[0] - 5, Cc[1] - 5, 10, 10, { fill: c.fa, stroke: c.ln, strokeWidth: 2 });
+    s += P(`M${A} C${B} ${Cc} ${D}`, { stroke: c.ln, strokeWidth: 5.5, fill: 'none' });
+    // playhead + point on curve
+    const px = 262;
+    const bz = (t, a, b, cc, d) => (1 - t) ** 3 * a + 3 * (1 - t) ** 2 * t * b + 3 * (1 - t) * t * t * cc + t ** 3 * d;
+    let lo = 0, hi = 1; for (let k = 0; k < 40; k++) { const m = (lo + hi) / 2; (bz(m, A[0], B[0], Cc[0], D[0]) < px ? lo = m : hi = m); }
+    const py = bz(lo, A[1], B[1], Cc[1], D[1]);
+    s += L(px, gy0 - 8, px, gy1, { stroke: C.red, strokeWidth: 2.5, strokeDasharray: '7 5' });
+    s += R(px - 9, py - 9, 18, 18, { fill: C.red });
+    const dia = (x, y) => P(`M${x} ${y - 12} L${x + 12} ${y} L${x} ${y + 12} L${x - 12} ${y} Z`, { fill: c.fb });
+    s += dia(A[0], A[1]) + dia(D[0], D[1]);
+    s += T(gx0 + 8, gy0 - 8, 'VALUE', lab(12, 800, { fill: c.mut, letterSpacing: 1 }));
+    s += T(gx1, 262, 'TIME', lab(12, 800, { fill: c.mut, letterSpacing: 1, textAnchor: 'end' }));
+    s += T(gx0, 262, 'EASE IN–OUT', lab(12, 800, { fill: c.ln, letterSpacing: 1 }));
+    return s;
+  },
+
+  /* 06 DESIGN — poster, type specimen, swatches */
+  design(c) {
+    let s = '';
+    s += R(20, 20, 132, 240, { fill: c.fb });
+    s += Ci(86, 98, 46, { fill: C.red });
+    s += T(32, 208, 'LAUNCH', disp(37, { fill: c.bg === C.ink ? C.ink : C.paper }));
+    s += R(32, 222, 92, 6, { fill: c.bg === C.ink ? C.ink : C.paper, fillOpacity: .55 }) + R(32, 234, 66, 6, { fill: c.bg === C.ink ? C.ink : C.paper, fillOpacity: .55 });
+    s += T(170, 148, 'Aa', disp(124, { fill: c.ln }));
+    s += L(172, 172, 286, 172, { stroke: c.ln, strokeWidth: 2 });
+    s += T(172, 196, 'ABCDEFGH', lab(14, 800, { fill: c.ln, letterSpacing: 1 }));
+    s += T(172, 216, 'abcdefgh 0123', lab(14, 500, { fill: c.mut }));
+    s += T(172, 252, 'DISPLAY / TEXT', lab(11, 800, { fill: c.mut, letterSpacing: 1.2 }));
+    // swatches
+    s += R(302, 22, 38, 38, { fill: c.fb }) + R(348, 22, 38, 38, { fill: C.red });
+    s += R(302, 68, 38, 38, { fill: c.soft }) + R(348, 68, 38, 38, { fill: c.fa, stroke: c.ln, strokeWidth: 2 });
+    // type scale bars
+    s += R(302, 130, 84, 12, { fill: c.ln }) + R(302, 152, 66, 9, { fill: c.ln }) + R(302, 170, 52, 7, { fill: c.mut }) + R(302, 186, 40, 5, { fill: c.mut });
+    s += R(302, 206, 84, 5, { fill: c.soft }) + R(302, 218, 84, 5, { fill: c.soft }) + R(302, 230, 60, 5, { fill: c.soft });
+    return s;
+  },
+
+  /* 07 PODCAST — EP. 01 tag, studio mic, two-voice waveform */
+  podcast(c) {
+    let s = '';
+    s += R(22, 22, 94, 34, { fill: C.red }) + T(34, 46, 'EP. 01', lab(18, 800, { fill: C.ink, letterSpacing: 1 }));
+    // mic
+    s += P('M48 126 a26 26 0 0 1 52 0 V170 a26 26 0 0 1 -52 0 Z', { fill: c.fb });
+    for (let y = 116; y <= 160; y += 11) s += L(56, y, 92, y, { stroke: c.bg === C.ink ? C.ink : C.paper, strokeWidth: 3 });
+    s += P('M36 158 V170 a38 38 0 0 0 76 0 V158', { stroke: c.ln, strokeWidth: 4.5, fill: 'none' });
+    s += L(74, 208, 74, 240, { stroke: c.ln, strokeWidth: 5 }) + L(48, 242, 100, 242, { stroke: c.ln, strokeWidth: 6 });
+    // waveforms
+    const px = 292;
+    s += T(144, 82, 'HOST', lab(12, 800, { fill: c.mut, letterSpacing: 1.2 }));
+    s += T(144, 178, 'GUEST', lab(12, 800, { fill: c.mut, letterSpacing: 1.2 }));
+    const r = rng(11);
+    for (let x = 144; x < 384; x += 7) {
+      const h1 = 6 + Math.abs(Math.sin(x * .09)) * 34 * r() + r() * 14;
+      s += R(x, 124 - h1 / 2, 4, h1, { fill: x < px ? c.ln : c.soft });
+      const h2 = 4 + Math.abs(Math.cos(x * .07)) * 26 * r() + r() * 8;
+      s += R(x, 218 - h2 / 2, 4, h2, { fill: x < px ? c.mut : c.soft });
+    }
+    s += L(px - 1.5, 70, px - 1.5, 256, { stroke: C.red, strokeWidth: 3.5 });
+    s += R(px - 9.5, 62, 16, 16, { fill: C.red });
+    return s;
+  },
+
+  /* 08 SOCIAL — 9:16 post with like / comment / share rail */
+  social(c) {
+    let s = '';
+    const x = 70, y = 12, w = 144, h = 256;
+    const id = uid('so');
+    let inner = R(x, y, w, h, { fill: C.ink });
+    inner += Ci(x + 54, y + 92, 40, { fill: C.red });
+    inner += P(`M${x} ${y + 150} L${x + 70} ${y + 150} L${x + w} ${y + 118} L${x + w} ${y + h} L${x} ${y + h} Z`, { fill: C.p2 });
+    s += `<clipPath id="${id}"><rect x="${x}" y="${y}" width="${w}" height="${h}"/></clipPath>` + G(inner, { clipPath: `url(#${id})` });
+    s += R(x, y, w, h, { fill: 'none', stroke: c.ln, strokeWidth: 3 });
+    // story progress
+    s += R(x + 10, y + 12, 38, 4, { fill: C.paper }) + R(x + 53, y + 12, 38, 4, { fill: C.paper }) + R(x + 96, y + 12, 38, 4, { fill: C.paper, fillOpacity: .4 });
+    // caption
+    s += T(x + 12, y + h - 40, '@yourbrand', lab(12, 800, { fill: C.ink }));
+    s += R(x + 12, y + h - 30, 86, 5, { fill: C.ink, fillOpacity: .55 }) + R(x + 12, y + h - 20, 60, 5, { fill: C.ink, fillOpacity: .55 });
+    // right: account + engagement rail (desktop Reels layout: the rail sits beside the post)
+    const rx = 244;
+    const heart = (cx, cy, sz, o) => P(`M${cx} ${cy + sz * .9} L${cx - sz} ${cy - sz * .05} A${sz * .5} ${sz * .5} 0 0 1 ${cx} ${cy - sz * .55} A${sz * .5} ${sz * .5} 0 0 1 ${cx + sz} ${cy - sz * .05} Z`, o);
+    s += Ci(rx + 16, 34, 16, { fill: c.fb });
+    s += R(rx + 42, 24, 86, 8, { fill: c.ln }) + R(rx + 42, 39, 56, 6, { fill: c.soft });
+    s += R(rx, 66, 128, 3, { fill: c.ln, fillOpacity: .25 });
+    // rail: like (the one red element), comment, share, each with a count bar
+    s += heart(rx + 16, 106, 17, { fill: C.red }) + R(rx + 48, 102, 50, 8, { fill: c.ln });
+    s += P(`M${rx + 1} 150 H${rx + 31} V174 H${rx + 14} L${rx + 5} 183 V174 H${rx + 1} Z`, { fill: 'none', stroke: c.ln, strokeWidth: 3.5, strokeLinejoin: 'miter' }) + R(rx + 48, 160, 36, 8, { fill: c.soft });
+    s += P(`M${rx + 1} 228 L${rx + 32} 212 L${rx + 24} 244 L${rx + 15} 231 Z M${rx + 15} 231 L${rx + 32} 212`, { fill: 'none', stroke: c.ln, strokeWidth: 3.5, strokeLinejoin: 'miter' }) + R(rx + 48, 224, 28, 8, { fill: c.soft });
+    return s;
+  },
+
+  /* 09 WEB — browser window with a hero layout */
+  web(c) {
+    let s = '';
+    s += R(14, 16, 372, 248, { fill: c.fa, stroke: c.ln, strokeWidth: 4 });
+    s += R(14, 16, 372, 30, { fill: c.ln });
+    s += R(26, 27, 9, 9, { fill: c.bg === C.ink ? C.ink : C.paper }) + R(41, 27, 9, 9, { fill: c.bg === C.ink ? C.ink : C.paper, fillOpacity: .5 }) + R(56, 27, 9, 9, { fill: C.red });
+    s += R(84, 24, 214, 14, { fill: c.bg === C.ink ? C.ink : C.paper, fillOpacity: .18 });
+    s += R(32, 62, 34, 12, { fill: c.ln });
+    s += R(236, 65, 30, 6, { fill: c.mut }) + R(276, 65, 30, 6, { fill: c.mut }) + R(316, 65, 50, 6, { fill: c.ln });
+    s += T(30, 128, 'THE', disp(46, { fill: c.ln }));
+    s += T(30, 176, 'LAUNCH.', disp(46, { fill: c.ln }));
+    s += R(32, 190, 132, 6, { fill: c.mut }) + R(32, 202, 100, 6, { fill: c.mut });
+    s += R(32, 220, 96, 28, { fill: C.red }) + T(44, 239, 'DISCOVER', lab(12, 800, { fill: C.ink, letterSpacing: 1 }));
+    s += kv(196, 86, 174, 162, c, 0);
+    return s;
+  },
+
+  /* 10 APPS — phone, swipe card: post it or toss it */
+  apps(c) {
+    let s = '';
+    s += R(148, 8, 104, 264, { fill: C.ink });
+    s += R(155, 28, 90, 224, { fill: C.paper });
+    s += R(184, 16, 32, 4, { fill: C.paper, fillOpacity: .5 });
+    s += T(200, 46, 'Culvo', lab(12, 800, { fill: C.ink, textAnchor: 'middle' }));
+    s += G(kv(166, 60, 68, 112, c, 1, 2.5), { transform: 'rotate(-9 200 116)' });
+    // buttons
+    s += R(166, 200, 28, 28, { fill: C.paper, stroke: C.ink, strokeWidth: 2.5 });
+    s += L(174, 208, 186, 220, { stroke: C.ink, strokeWidth: 3 }) + L(186, 208, 174, 220, { stroke: C.ink, strokeWidth: 3 });
+    s += R(206, 200, 28, 28, { fill: C.red, stroke: C.ink, strokeWidth: 2.5 });
+    s += P('M213 214 L218 220 L228 208', { fill: 'none', stroke: C.ink, strokeWidth: 3 });
+    // swipe labels
+    s += T(132, 122, 'TOSS IT', lab(15, 800, { fill: c.ln, textAnchor: 'end', letterSpacing: 1 }));
+    s += L(132, 138, 66, 138, { stroke: c.ln, strokeWidth: 3.5 }) + P('M76 130 L66 138 L76 146', { fill: 'none', stroke: c.ln, strokeWidth: 3.5 });
+    s += T(268, 122, 'POST IT', lab(15, 800, { fill: c.acc === C.paper ? C.paper : C.red, letterSpacing: 1 }));
+    s += L(268, 138, 334, 138, { stroke: c.acc === C.paper ? C.paper : C.red, strokeWidth: 3.5 }) + P('M324 130 L334 138 L324 146', { fill: 'none', stroke: c.acc === C.paper ? C.paper : C.red, strokeWidth: 3.5 });
+    return s;
+  },
+
+  /* 11 AI — prompt bar + generated variations (understated) */
+  ai(c) {
+    let s = '';
+    s += R(16, 20, 368, 44, { fill: c.fa, stroke: c.ln, strokeWidth: 3 });
+    s += P('M30 34 L38 42 L30 50', { fill: 'none', stroke: C.red, strokeWidth: 3.5 });
+    s += T(48, 48, 'launch visual, bold, warm', lab(15, 600, { fill: c.ln }));
+    s += R(238, 31, 3, 22, { fill: c.ln });
+    s += R(338, 26, 40, 32, { fill: c.fb });
+    s += L(348, 42, 366, 42, { stroke: c.bg === C.ink ? C.ink : C.paper, strokeWidth: 3 }) + P('M360 36 L366 42 L360 48', { fill: 'none', stroke: c.bg === C.ink ? C.ink : C.paper, strokeWidth: 3 });
+    for (let i = 0; i < 4; i++) {
+      const x = 16 + i * 94, y = 84, w = 86, h = 132;
+      s += kv(x, y, w, h, c, i, 2.5);
+      if (i === 2) {
+        s += R(x - 5, y - 5, w + 10, h + 10, { fill: 'none', stroke: C.red, strokeWidth: 4 });
+        s += R(x + w - 22, y + 6, 18, 18, { fill: C.red }) + P(`M${x + w - 18} ${y + 15} L${x + w - 14} ${y + 19} L${x + w - 7} ${y + 11}`, { fill: 'none', stroke: C.ink, strokeWidth: 2.5 });
+      }
+    }
+    s += T(16, 250, 'VARIATIONS', lab(12, 800, { fill: c.mut, letterSpacing: 1.2 }));
+    s += T(384, 250, '1 — 4', lab(12, 800, { fill: c.mut, letterSpacing: 1.2, textAnchor: 'end' }));
+    return s;
+  },
+
+  /* 12 DISTRIBUTION — one asset in 16:9, 9:16, 1:1, 4:5 */
+  distribution(c) {
+    let s = '';
+    const base = 212;
+    const fr = [['16:9', 7, 128, 72], ['9:16', 149, 56, 100], ['1:1', 219, 84, 84], ['4:5', 317, 76, 95]];
+    // branch lines from one source
+    s += R(186, 14, 28, 20, { fill: C.red });
+    s += L(200, 34, 200, 58, { stroke: c.ln, strokeWidth: 3 });
+    const cx = fr.map(([, x, w]) => x + w / 2);
+    s += L(cx[0], 58, cx[3], 58, { stroke: c.ln, strokeWidth: 3 });
+    fr.forEach(([n, x, w, h], i) => {
+      const top = base - h;
+      s += L(cx[i], 58, cx[i], top - 9, { stroke: c.ln, strokeWidth: 3 }) + P(`M${cx[i] - 6} ${top - 13} L${cx[i]} ${top - 5} L${cx[i] + 6} ${top - 13}`, { fill: 'none', stroke: c.ln, strokeWidth: 3 });
+      s += kv(x, top, w, h, c, 0, 3);
+      s += T(x + w / 2, base + 30, n, lab(16, 800, { fill: c.ln, textAnchor: 'middle' }));
+    });
+    return s;
+  },
+};
+
+const TILES = [
+  ['01', 'CONCEPT', 'concept', 'light'],
+  ['02', 'STORYBOARD', 'storyboard', 'light'],
+  ['03', 'FILMING', 'filming', 'dark'],
+  ['04', 'EDITING', 'editing', 'light'],
+  ['05', 'MOTION', 'motion', 'light'],
+  ['06', 'DESIGN', 'design', 'light'],
+  ['07', 'PODCAST', 'podcast', 'light'],
+  ['08', 'SOCIAL', 'social', 'light'],
+  ['09', 'WEB', 'web', 'light'],
+  ['10', 'APPS', 'apps', 'light'],
+  ['11', 'AI', 'ai', 'light'],
+  ['12', 'DISTRIBUTION', 'distribution', 'light'],
+];
+
+/* ------------------------------------------------------------------ *
+ *  TILE (header + art panel).  state: 'live' | 'active' | 'empty'
+ * ------------------------------------------------------------------ */
+const TW = 282, HEAD = 56, PANEL_H = TW * AH / AW;  // 197.4
+const LBX = 54, LBS = 19;                             // tile label x / size (19px = 9.5px at the 960 embed)
+const TH_ = HEAD + PANEL_H;                           // 253.4
+
+function tile(i, x, y, state = 'live', o = {}) {
+  const [num, name, fn, theme] = TILES[i];
+  let s = '';
+  const sc = TW / AW;
+  s += R(0, 0, TW, TH_, { fill: C.paper });   // tile sits on paper: grid guides show only in the gutters
+  if (state === 'empty') {
+    /* reserved slot: hairline rule, outline number, a 45deg hatch "reserved" panel
+       (print-shop knock-out area, NOT an X/missing-image box) */
+    s += R(0, 0, TW, 2, { fill: C.gr });
+    s += T(0, 47, num, disp(42, { fill: 'none', stroke: C.gr, strokeWidth: 1.5 }));
+    s += T(LBX, 45, name, lab(LBS, 800, { fill: C.gr, letterSpacing: 1.6 }));
+    const hid = uid('rs');
+    let hatch = '';
+    for (let k = -PANEL_H; k < TW; k += 14) hatch += L(k, HEAD + PANEL_H, k + PANEL_H, HEAD, { stroke: C.gr, strokeOpacity: .32, strokeWidth: 1.2 });
+    s += `<clipPath id="${hid}"><rect x="0" y="${HEAD}" width="${TW}" height="${PANEL_H}"/></clipPath>` + G(hatch, { clipPath: `url(#${hid})` });
+    s += R(0.75, HEAD + .75, TW - 1.5, PANEL_H - 1.5, { fill: 'none', stroke: C.gr, strokeOpacity: .7, strokeWidth: 1.5 });
+  } else {
+    const act = state === 'active';
+    const th = act ? TH.active : TH[theme];
+    s += R(0, 0, TW, act ? 9 : 6, { fill: act ? C.red : C.ink });
+    s += T(-1, 47, num, disp(42, { fill: act ? C.red : C.ink }));
+    s += T(LBX, 45, name, lab(LBS, 800, { fill: C.ink, letterSpacing: 1.6 }));
+    if (o.deg !== false && !(o.noDeg && o.noDeg.includes(i))) s += T(TW, 45, `+30°`, lab(15, 700, { fill: act ? C.red : C.gr, textAnchor: 'end' }));
+    s += R(0, HEAD, TW, PANEL_H, { fill: th.bg });
+    const id = uid('tp');
+    s += `<clipPath id="${id}"><rect x="0" y="0" width="${AW}" height="${AH}"/></clipPath>`;
+    s += G(G(ART[fn](th), { clipPath: `url(#${id})` }), { transform: `translate(0 ${HEAD}) scale(${sc})` });
+  }
+  return G(s, { transform: `translate(${x} ${y})` });
+}
+
+/* master grid positions (6 x 2) */
+const GRID_Y0 = 96, ROW_GAP = 24;
+const gridPos = i => [colX((i % 6) * 2), GRID_Y0 + Math.floor(i / 6) * (TH_ + ROW_GAP)];
+function grid(states, o) {
+  let s = '';
+  for (let i = 0; i < 12; i++) { const [x, y] = gridPos(i); s += tile(i, x, y, states[i], o); }
+  return s;
+}
+
+/* ------------------------------------------------------------------ *
+ *  360° DEVICE — giant numerals that fill like a gauge,
+ *  a degree ring that draws itself (trim path), a split-flap seam.
+ * ------------------------------------------------------------------ */
+function degrees(xr, base, size, deg, opt = {}) {
+  const str = String(deg).padStart(3, '0');
+  const font = `400 ${size}px Anton`;
+  const wDigits = measure(str, font).width;
+  const capH = measure('0', font).actualBoundingBoxAscent;
+  const frac = deg / 360;
+  const sw = opt.sw || Math.max(2.5, size / 110);
+  // degree ring geometry
+  const rr = size * .118, rsw = size * .062;
+  const ringW = rr * 2 + rsw;
+  const gapR = size * .05;
+  const wAll = wDigits + gapR + ringW;
+  const x0 = xr - wAll;
+  const id = uid('dg');
+  let s = '';
+  // outline
+  s += T(x0, base, str, disp(size, { fill: 'none', stroke: C.ink, strokeWidth: sw }));
+  // fill (rises from the baseline as degrees climb)
+  const fy = base - capH * frac;
+  if (frac > 0) {
+    s += `<clipPath id="${id}"><rect x="${x0 - 20}" y="${fy}" width="${wDigits + 40}" height="${base - fy + 20}"/></clipPath>`;
+    s += T(x0, base, str, disp(size, { fill: C.ink, clipPath: `url(#${id})` }));
+  }
+  // split-flap seam (only across the digits)
+  if (opt.seam !== false) s += R(x0 + size * .02, base - capH / 2 - size * .006, wDigits - size * .05, Math.max(3, size * .012), { fill: opt.bg || C.paper });
+  // degree ring: hairline track + red arc = deg/360 (trim path)
+  const cx = x0 + wDigits + gapR + ringW / 2, cy = base - capH + ringW / 2;
+  const circ = 2 * Math.PI * rr;
+  s += Ci(cx, cy, rr, { fill: 'none', stroke: C.ink, strokeOpacity: frac >= 1 ? 0 : .35, strokeWidth: Math.max(1.5, size / 220) });
+  if (frac > 0) s += Ci(cx, cy, rr, { fill: 'none', stroke: C.red, strokeWidth: rsw, strokeDasharray: `${circ * frac} ${circ}`, transform: `rotate(-90 ${cx} ${cy})` });
+  else s += R(cx - rsw * .18, cy - rr - rsw / 2, rsw * .36, rsw, { fill: C.red });
+  return { svg: s, x0, w: wAll, capH };
+}
+
+function ruler(x, y, w, filled, opt = {}) {
+  const n = 12, g = opt.gap ?? 6, h = opt.h ?? 40;
+  const sw = (w - g * (n - 1)) / n;
+  const ns = opt.numSize ?? 14;
+  let s = '';
+  for (let i = 0; i < n; i++) {
+    const sx = x + i * (sw + g);
+    const lbl = String(i + 1).padStart(2, '0');
+    if (i < filled) {
+      s += R(sx, y, sw, h, { fill: (opt.current === i) ? C.red : C.ink });
+      if (opt.nums !== false) s += T(sx + 9, y + h - 11, lbl, lab(ns, 800, { fill: (opt.current === i) ? C.ink : C.paper, class: 'tn' }));
+    } else {
+      s += R(sx + .75, y + .75, sw - 1.5, h - 1.5, { fill: 'none', stroke: C.gr, strokeWidth: 1.5 });
+      if (opt.nums !== false) s += T(sx + 9, y + h - 11, lbl, lab(ns, 800, { fill: C.gr, class: 'tn' }));
+    }
+  }
+  if (opt.ticks !== false) {
+    const ts = opt.tickSize ?? 18;
+    for (let k = 0; k <= 4; k++) {
+      const tx = k === 4 ? x + w - 1 : k === 0 ? x + 1 : x + k * 3 * (sw + g) - g / 2;
+      s += L(tx, y + h + 6, tx, y + h + 18, { stroke: C.ink, strokeWidth: 2 });
+      s += T(tx, y + h + 18 + ts + 4, `${k * 90}°`, lab(ts, 700, { fill: C.ink, textAnchor: k === 0 ? 'start' : k === 4 ? 'end' : 'middle', class: 'tn' }));
+    }
+  }
+  return s;
+}
+
+/* ------------------------------------------------------------------ *
+ *  PAGE FURNITURE — column guides + running head
+ * ------------------------------------------------------------------ */
+function guides(y0 = 0, y1 = H, op = .085) {
+  let s = '';
+  for (let k = 0; k < 12; k++) {
+    const x = colX(k);
+    s += L(x + .5, y0, x + .5, y1, { stroke: C.ink, strokeOpacity: op, strokeWidth: 1 }) + L(x + COLW - .5, y0, x + COLW - .5, y1, { stroke: C.ink, strokeOpacity: op, strokeWidth: 1 });
+  }
+  return s;
+}
+function runningHead(o = {}) {
+  let s = '';
+  if (o.bg) s += R(0, 0, W, 64, { fill: C.paper });
+  // on the end card the masthead's wordmark and URL have dropped into the sign-off lockup (no duplicates)
+  if (!o.endCard) s += T(M, 46, 'Onemarsmedia', lab(19, 800, { fill: C.ink, letterSpacing: -.2 }));
+  s += T(o.endCard ? M : colX(4), 46, 'One brief. The whole campaign.', lab(19, 600, { fill: C.ink }));
+  if (!o.endCard) s += T(W - M, 46, 'onemarsmedia.com', lab(19, 600, { fill: C.gr, textAnchor: 'end' }));
+  s += R(M, 62, W - 2 * M, 2.5, { fill: C.ink });
+  return s;
+}
+const rule = (y, x0 = M, x1 = W - M, h = 2.5) => R(x0, y, x1 - x0, h, { fill: C.ink });
+
+/* ------------------------------------------------------------------ *
+ *  FRAMES
+ * ------------------------------------------------------------------ */
+const BAND_Y = 652, BASE = 1020, DEG_SIZE = 380;
+const L1 = 370, L2 = 622, BIG = 260;   // two-line poster type (brief / sign-off)
+const RUL_H = 64, RUL_Y = BASE - RUL_H - 18 - 16 - 4;   // ruler tick labels sit on the numeral baseline
+const tc = n => ({ AI: 'AI' }[n] || n.charAt(0) + n.slice(1).toLowerCase());
+
+function bandLeft(title, line2, line2b) {
+  let s = '';
+  s += T(M, BAND_Y + 48, title, lab(19, 800, { fill: C.ink, letterSpacing: 3 }));
+  s += T(M, BAND_Y + 94, line2, lab(36, 600, { fill: line2b ? C.ink : C.gr }));
+  return s;
+}
+
+/* small two-column table hanging from a label line (memo / contents) */
+function memo(x, y, rows, o = {}) {
+  let s = '';
+  const rh = o.rh || 40, vx = x + (o.vx || 151);
+  rows.forEach(([k, v, st], i) => {
+    const yy = y + i * rh;
+    s += T(x, yy, k, lab(o.ks || 17, 800, { fill: st === 'dim' ? C.gr : (o.kc || C.gr), letterSpacing: 1.6, class: 'tn' }));
+    s += T(vx, yy, v, lab(o.vs || 24, o.vw || 600, { fill: st === 'dim' ? C.gr : C.ink }));
+    s += R(x, yy + 14, (o.w || 584), 1, { fill: C.ink, fillOpacity: .22 });
+  });
+  return s;
+}
+
+function f1() {
+  let s = guides(64, H);
+  s += runningHead();
+  s += T(M, 112, 'THE BRIEF', lab(19, 800, { fill: C.red, letterSpacing: 3 }));
+  s += memo(colX(8), 112, [['TO', 'Onemarsmedia'], ['FROM', 'Brand team'], ['RE', 'Launch']]);
+  s += T(M - 5, L1, 'We need', disp(BIG, { fill: C.ink }));
+  s += T(M - 5, L2, 'a launch.', disp(BIG, { fill: C.ink }));
+  const w2 = measure('a launch.', `400 ${BIG}px Anton`).width;
+  const capH = measure('H', `400 ${BIG}px Anton`).actualBoundingBoxAscent;
+  s += R(M - 5 + w2 + 18, L2 - capH, 30, capH, { fill: C.red });
+  s += rule(BAND_Y);
+  s += bandLeft('THE WHOLE CAMPAIGN', '0 of 12 deliverables');
+  s += ruler(M, RUL_Y, 900, 0, { h: RUL_H, numSize: 20 });
+  s += degrees(W - M, BASE, DEG_SIZE, 0).svg;
+  return s;
+}
+
+function f3() {
+  let s = guides(64, H, .06);
+  s += runningHead();
+  const st = Array(12).fill('live'); st[9] = 'active'; st[10] = 'empty'; st[11] = 'empty';
+  s += grid(st);
+  s += rule(BAND_Y);
+  s += bandLeft('THE WHOLE CAMPAIGN', '10 of 12 deliverables', true);
+  const wl = measure('10 of 12 deliverables', `600 36px "Schibsted Grotesk"`).width;
+  s += T(M + wl + 34, BAND_Y + 94, 'Now: 10 Apps', lab(36, 800, { fill: C.red }));
+  s += ruler(M, RUL_Y, 900, 10, { current: 9, h: RUL_H, numSize: 20 });
+  s += degrees(W - M, BASE, DEG_SIZE, 300).svg;
+  return s;
+}
+
+function tiles() {
+  // review extra (t~25 s pull-back): all 12 alive, counter complete
+  let s = guides(64, H, .06);
+  s += runningHead();
+  s += grid(Array(12).fill('live'));
+  s += rule(BAND_Y);
+  s += bandLeft('THE WHOLE CAMPAIGN', '12 of 12 deliverables', true);
+  const wl = measure('12 of 12 deliverables', `600 36px "Schibsted Grotesk"`).width;
+  s += T(M + wl + 34, BAND_Y + 94, 'One campaign.', lab(36, 800, { fill: C.red }));
+  s += ruler(M, RUL_Y, 900, 12, { h: RUL_H, numSize: 20 });
+  s += degrees(W - M, BASE, DEG_SIZE, 360).svg;
+  return s;
+}
+
+function f2() {
+  // hard cut to a 3.2x crop of the grid, type column on the right
+  const z = 3.2;
+  const [tx, ty] = gridPos(2);
+  const ox = M, oy = 100;   // hero tile snaps to the left margin: neighbour 02 is fully off-frame
+  const st = Array(12).fill('empty'); st[0] = 'live'; st[1] = 'live'; st[2] = 'live';
+  let s = '';
+  s += G(grid(st), { transform: `translate(${ox - tx * z} ${oy - ty * z}) scale(${z})` });
+  const cx = 1200;   // column edge sits just past the 04 placeholder number, so no orphan label letters show
+  s += R(cx, 0, W - cx, H, { fill: C.paper });
+  s += guides(64, H, .06).replace(/<line[^>]*x1="(\d+(\.\d+)?)"[^>]*\/>/g, (m, x) => (+x > cx ? m : ''));
+  s += R(cx, 64, 3, H - 64, { fill: C.ink });
+  s += runningHead({ bg: true });
+  // contents index
+  const x0 = colX(8), x1 = W - M;
+  s += T(x0, 128, 'THE WHOLE CAMPAIGN', lab(19, 800, { fill: C.ink, letterSpacing: 3 }));
+  s += T(x1, 128, '3 / 12', lab(19, 800, { fill: C.ink, textAnchor: 'end', class: 'tn' }));
+  const rh = 38, ry0 = 150;
+  TILES.forEach(([n, name], i) => {
+    const y = ry0 + i * rh;
+    const done = i < 2, cur = i === 2;
+    if (cur) s += R(x0, y, x1 - x0, rh, { fill: C.red });
+    else s += R(x0, y + rh - 1, x1 - x0, 1, { fill: C.ink, fillOpacity: done ? .5 : .18 });
+    const col = cur || done ? C.ink : C.gr;
+    s += T(x0 + (cur ? 12 : 0), y + 27, n, lab(19, 800, { fill: col, class: 'tn' }));
+    s += T(x0 + (cur ? 64 : 52), y + 27, tc(name), lab(21, cur ? 800 : 600, { fill: col }));
+    s += T(x1 - (cur ? 12 : 0), y + 27, String((i + 1) * 30).padStart(3, '0') + '°', lab(19, 700, { fill: col, textAnchor: 'end', class: 'tn', fillOpacity: done || cur ? 1 : .8 }));
+  });
+  s += rule(BAND_Y + 30, x0, x1);
+  s += degrees(W - M, BASE, 300, 90).svg;
+  return s;
+}
+
+function f4() {
+  let s = guides(64, H);
+  s += runningHead({ endCard: true });
+  s += T(M - 5, L1, 'One team<tspan fill="' + C.red + '">.</tspan>', disp(BIG, { fill: C.ink }));
+  s += T(M - 5, L2, 'No limits<tspan fill="' + C.red + '">.</tspan>', disp(BIG, { fill: C.ink }));
+  // the whole campaign, as a contents list
+  const x0 = colX(8), x1 = W - M;
+  s += T(x0, 112, 'THE WHOLE CAMPAIGN', lab(19, 800, { fill: C.ink, letterSpacing: 3 }));
+  s += T(x1, 112, '12 / 12', lab(19, 800, { fill: C.red, textAnchor: 'end', class: 'tn' }));
+  TILES.forEach(([n, name], i) => {
+    const col = i < 6 ? 0 : 1, row = i % 6;
+    const x = col ? colX(10) : x0, y = 160 + row * 40;
+    s += T(x, y, n, lab(18, 800, { fill: C.gr, class: 'tn' }));
+    s += T(x + 38, y, tc(name), lab(22, 600, { fill: C.ink }));
+    s += R(x, y + 14, col ? x1 - colX(10) : colX(10) - GUT - x0, 1, { fill: C.ink, fillOpacity: .22 });
+  });
+  s += rule(BAND_Y);
+  // sign-off lockup: wordmark + descriptor, URL on the shared band baseline (same line as the 360 numerals)
+  s += T(M, BAND_Y + 48, 'BRANDED CONTENT PRODUCTION, LONDON', lab(19, 800, { fill: C.ink, letterSpacing: 3 }));
+  s += T(M - 5, 934, 'Onemarsmedia', lab(112, 800, { fill: C.ink, letterSpacing: -3.8 }));
+  s += T(M, BASE, 'onemarsmedia.com', lab(40, 600, { fill: C.ink }));
+  s += degrees(W - M, BASE, DEG_SIZE, 360).svg;
+  return s;
+}
+
+/* ------------------------------------------------------------------ */
+(async () => {
+  await Promise.all([
+    document.fonts.load('400 100px Anton'),
+    document.fonts.load('800 20px "Schibsted Grotesk"'),
+    document.fonts.load('700 20px "Schibsted Grotesk"'),
+    document.fonts.load('600 20px "Schibsted Grotesk"'),
+    document.fonts.load('500 20px "Schibsted Grotesk"'),
+  ]);
+  const f = new URLSearchParams(location.search).get('frame') || 'f3';
+  const body = ({ f1, f2, f3, f4, tiles }[f] || f3)();
+  document.getElementById('stage').innerHTML =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${R(0, 0, W, H, { fill: C.paper })}${body}</svg>`;
+  await document.fonts.ready;
+  window.__ready = true;
+})();
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 import {bezierToAe} from '../src/scene/ease';
-import {hexToRgb01, isAnimated, isLinked} from '../src/scene/eval';
+import {hexToRgb01, isAnimated, isLinked, isLinkedVec} from '../src/scene/eval';
 import {baseText} from '../src/scene/text';
 import type {
   Animated,
@@ -9,6 +9,7 @@ import type {
   Key,
   Layer,
   Linked,
+  LinkedVec2,
   Num,
   PathData,
   Prop,
@@ -29,7 +30,7 @@ import type {
 export interface ManifestEntry {
   /** Path as the mock records it: comp/layer/matchName/index/... */
   path: string;
-  prop: Num | Prop<Vec2>;
+  prop: Num | Prop<Vec2> | LinkedVec2;
   /** For separated position: which dimension this AE property carries. */
   dim?: 0 | 1;
   /** Value scale applied on the way out (e.g. colour or opacity conversions). */
@@ -138,7 +139,7 @@ class Emitter {
 
   /** Emit a spec literal for a property and record it in the manifest. */
   spec<T extends number | Vec2>(
-    p: Prop<T> | Linked,
+    p: Prop<T> | Linked | LinkedVec2,
     fps: number,
     path: string,
     opts: {spatial?: boolean; map?: (v: T) => number | number[]; dim?: 0 | 1; noManifest?: boolean} = {},
@@ -147,6 +148,10 @@ class Emitter {
     if (isLinked(p)) {
       if (!opts.noManifest) this.manifest.push({path, prop: p, fps});
       return `{x:${jsStr(linkExpr(p) + ';')}}`;
+    }
+    if (isLinkedVec(p)) {
+      if (!opts.noManifest) this.manifest.push({path, prop: p, fps});
+      return `{x:${jsStr(linkVecExpr(p) + ';')}}`;
     }
     if (!isAnimated(p)) return `{v:${lit(map(p as T))}}`;
     const anim = p as Animated<T>;
@@ -267,6 +272,7 @@ class Emitter {
     const outF = l.out ?? c.duration;
     this.out(`timing(${lv}, ${num(startTime / fps)}, ${num(inF / fps)}, ${num(outF / fps)});`);
     if (l.label) this.out(`${lv}.label = ${l.label};`);
+    if (l.kind === 'precomp' && l.collapse) this.out(`${lv}.collapseTransformation = true;`);
   }
 
   emitShapeItems(c: Comp, layerName: string, items: ShapeItem[]) {
@@ -351,6 +357,11 @@ class Emitter {
     );
     const src = l.source;
     if (src.kind === 'static') return;
+    if (src.kind === 'keyed') {
+      const rows = src.keys.map((k) => `[${num(k.t / c.fps)},${jsStr(k.v.replace(/\n/g, '\r'))}]`).join(',');
+      this.out(`setTextKeys(${lv}, [${rows}]);`);
+      return;
+    }
     // The number behind the text: a linked controller slider, or the layer's own slider.
     const numberProp = src.kind === 'typeOn' ? src.chars : src.value;
     const ownName = src.kind === 'typeOn' ? 'Characters' : 'Value';
@@ -380,6 +391,13 @@ class Emitter {
       this.out(`addBlur(${lv}, ${this.spec(e.amount, c.fps, `${c.name}/${layerName}/ADBE Effect Parade/?/ADBE Gaussian Blur 2-0001`, {noManifest: true})});`);
     }
   }
+}
+
+/** AE expression for a linked 2D value. */
+export function linkVecExpr(p: LinkedVec2): string {
+  const {layer, slider, x, y} = p.linkVec;
+  const one = (c: LinkedVec2['linkVec']['x']) => linkExpr({link: {layer, slider, ...c}});
+  return `[${one(x)}, ${one(y)}]`;
 }
 
 /** AE expression (single statement value) for a linked number. */
@@ -412,10 +430,15 @@ export function validateScene(scene: Scene) {
         if (!sliderNames.get(v.link.layer)?.has(v.link.slider)) throw new Error(`${where}: link ${v.link.layer} > ${v.link.slider} not found in comp ${c.name}`);
         return;
       }
+      if (isLinkedVec(v)) {
+        if (!sliderNames.get(v.linkVec.layer)?.has(v.linkVec.slider)) throw new Error(`${where}: link ${v.linkVec.layer} > ${v.linkVec.slider} not found in comp ${c.name}`);
+        return;
+      }
       for (const x of Object.values(v as object)) checkLinks(where, x);
     };
     for (const l of c.layers) {
       checkLinks(`${c.name}/${l.name}`, l);
+      if ((l.in ?? 0) >= (l.out ?? c.duration)) throw new Error(`${c.name}/${l.name}: empty time range (in ${l.in ?? 0} >= out ${l.out ?? c.duration})`);
       if (l.parent && !names.has(l.parent)) throw new Error(`${c.name}/${l.name}: parent ${l.parent} not found`);
       if (l.matte && !names.has(l.matte.layer)) throw new Error(`${c.name}/${l.name}: matte ${l.matte.layer} not found`);
       if (l.kind === 'shape') {
@@ -632,6 +655,13 @@ function setText(l, font, size, rgb, tracking, leading, just, fill, strokeRgb, s
   textProp(l).setValue(td);
 }
 function setTextExpr(l, expr) { textProp(l).expression = expr; }
+function setTextKeys(l, keys) {
+  for (var i = 0; i < keys.length; i++) {
+    var td = textProp(l).value;
+    td.text = keys[i][1];
+    textProp(l).setValueAtTime(keys[i][0], td);
+  }
+}
 function addSlider(l, name, spec) {
   var fx = l.property("ADBE Effect Parade").addProperty("ADBE Slider Control");
   fx.name = name;

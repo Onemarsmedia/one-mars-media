@@ -115,6 +115,66 @@ def split_chunks(script: str):
     return chunks
 
 
+def choose_boundaries(pauses, chunks, chunk_syl, speech_start, speech_end):
+    """Pick one pause per chunk boundary (in order) by dynamic programming.
+
+    Cost per chunk: squared log-ratio of its duration to the duration its syllables predict.
+    Cost per chosen pause: rewards longer pauses, more so where the text has a full stop.
+    """
+    need = len(chunks) - 1
+    total_pause = sum(p[1] - p[0] for p in pauses)
+    rate = max(0.05, (speech_end - speech_start - 0.6 * total_pause) / sum(chunk_syl))  # seconds per syllable
+    starts = [speech_start] + [p[1] for p in pauses]
+    ends = [p[0] for p in pauses] + [speech_end]
+    n = len(pauses)
+    INF = float("inf")
+
+    def chunk_cost(k, a, b):
+        dur = b - a
+        if dur <= 0.08:
+            return INF
+        return 4.0 * np.log(dur / (chunk_syl[k] * rate)) ** 2
+
+    def pause_cost(k, j):
+        d = pauses[j][1] - pauses[j][0]
+        full_stop = chunks[k]["punct"][0] in ".!?"
+        expect = 0.32 if full_stop else 0.18
+        return -1.5 * min(d, 0.6) / expect
+
+    # cost[k][j]: best cost with boundary k placed at pause j (k, j 0-based)
+    cost = [[INF] * n for _ in range(need)]
+    back = [[-1] * n for _ in range(need)]
+    for j in range(n):
+        c = chunk_cost(0, speech_start, ends[j])
+        if c < INF:
+            cost[0][j] = c + pause_cost(0, j)
+    for k in range(1, need):
+        for j in range(k, n):
+            best, arg = INF, -1
+            for i in range(k - 1, j):
+                if cost[k - 1][i] == INF:
+                    continue
+                c = cost[k - 1][i] + chunk_cost(k, starts[i + 1], ends[j])
+                if c < best:
+                    best, arg = c, i
+            if arg >= 0:
+                cost[k][j] = best + pause_cost(k, j)
+                back[k][j] = arg
+    best, arg = INF, -1
+    for j in range(need - 1, n):
+        if cost[need - 1][j] == INF:
+            continue
+        c = cost[need - 1][j] + chunk_cost(need, starts[j + 1], speech_end)
+        if c < best:
+            best, arg = c, j
+    if arg < 0:
+        return []
+    picks = [arg]
+    for k in range(need - 1, 0, -1):
+        picks.append(back[k][picks[-1]])
+    return [pauses[j] for j in reversed(picks)]
+
+
 def align(audio_path: str, script: str):
     x = load_audio(audio_path)
     duration = len(x) / SR
@@ -130,16 +190,17 @@ def align(audio_path: str, script: str):
     need = len(chunks) - 1
     if len(inner) < need:
         print(f"warning: found {len(inner)} pauses for {need} chunk boundaries; falling back to syllable timing", file=sys.stderr)
-    # Score = pause length, with a bonus where the text has a full stop at that position in order.
-    chosen = sorted(sorted(inner, key=lambda p: p[1] - p[0], reverse=True)[:need])
-    bounds = [speech_start] + [b for p in chosen for b in p] + [speech_end]
-    if len(chosen) < need:
-        # Distribute the missing boundaries by syllables over the whole read.
-        total = sum(syllables(w) for c in chunks for w in c["text"].split())
+    chunk_syl = [sum(syllables(w) for w in c["text"].split()) for c in chunks]
+    chosen = choose_boundaries(inner, chunks, chunk_syl, speech_start, speech_end) if len(inner) >= need else []
+    if len(chosen) == need:
+        bounds = [speech_start] + [b for p in chosen for b in p] + [speech_end]
+    else:
+        # Distribute the boundaries by syllables over the whole read.
+        total = sum(chunk_syl)
         acc = 0
         bounds = [speech_start]
-        for c in chunks[:-1]:
-            acc += sum(syllables(w) for w in c["text"].split())
+        for n in chunk_syl[:-1]:
+            acc += n
             t = speech_start + (speech_end - speech_start) * acc / total
             bounds += [t, t]
         bounds.append(speech_end)

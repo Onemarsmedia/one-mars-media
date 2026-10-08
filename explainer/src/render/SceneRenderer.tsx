@@ -36,7 +36,7 @@ function layerMatrix(comp: Comp, layer: Layer, t: number, seen: Set<string> = ne
   const local = aeTransform(
     tr.anchor ?? [0, 0],
     evalVec2(tr.position, t, [0, 0]),
-    evalVec2(tr.scale, t, [100, 100]),
+    evalVec2(tr.scale, t, [100, 100], compLinkCtx(comp)),
     evalNumber(tr.rotation, t, 0, compLinkCtx(comp)),
   );
   if (!layer.parent) return local;
@@ -185,15 +185,15 @@ function LayerContent({scene, comp, layer, t}: {scene: Scene; comp: Comp; layer:
     case 'precomp': {
       const sub = scene.comps[layer.comp];
       if (!sub) throw new Error(`Missing comp ${layer.comp}`);
+      const content = <CompContent scene={scene} comp={sub} t={t - (layer.startTime ?? 0)} isPrecomp />;
+      if (layer.collapse) return content;
       const clip = nextId('clip');
       return (
         <>
           <clipPath id={clip}>
             <rect x={0} y={0} width={sub.width} height={sub.height} />
           </clipPath>
-          <g clipPath={`url(#${clip})`}>
-            <CompContent scene={scene} comp={sub} t={t - (layer.startTime ?? 0)} />
-          </g>
+          <g clipPath={`url(#${clip})`}>{content}</g>
         </>
       );
     }
@@ -217,10 +217,11 @@ function RenderedLayer({scene, comp, layer, t}: {scene: Scene; comp: Comp; layer
   );
 }
 
-export function CompContent({scene, comp, t}: {scene: Scene; comp: Comp; t: number}) {
+export function CompContent({scene, comp, t, isPrecomp}: {scene: Scene; comp: Comp; t: number; isPrecomp?: boolean}) {
+  // AE renders a comp's background colour only for the top-level comp, never inside a precomp.
   return (
     <>
-      {comp.bg && <rect x={0} y={0} width={comp.width} height={comp.height} fill={comp.bg} />}
+      {comp.bg && !isPrecomp && <rect x={0} y={0} width={comp.width} height={comp.height} fill={comp.bg} />}
       {comp.layers.map((layer) => {
         if (layer.kind === 'null' || layer.matteSource || !isVisible(layer, comp, t)) return null;
         const body = <RenderedLayer scene={scene} comp={comp} layer={layer} t={t} />;

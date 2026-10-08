@@ -44,7 +44,7 @@ const web = path.join(outDir, `${id}-web.mp4`);
 const audioIn = audio ? ['-i', audio] : [];
 const audioMap = audio ? ['-map', '1:a:0', '-shortest'] : [];
 ff('-i', silent, ...audioIn, '-map', '0:v:0', ...audioMap, '-c:v', 'libx264', '-profile:v', 'high', '-crf', '16', '-preset', 'slow', '-pix_fmt', 'yuv420p', ...(audio ? ['-c:a', 'aac', '-b:a', '320k'] : []), '-movflags', '+faststart', master);
-ff('-i', silent, ...audioIn, '-map', '0:v:0', ...audioMap, '-c:v', 'libx264', '-profile:v', 'high', '-b:v', '6M', '-maxrate', '8M', '-bufsize', '12M', '-preset', 'slow', '-pix_fmt', 'yuv420p', ...(audio ? ['-c:a', 'aac', '-b:a', '192k'] : []), '-movflags', '+faststart', web);
+ff('-i', silent, ...audioIn, '-map', '0:v:0', ...audioMap, '-c:v', 'libx264', '-profile:v', 'high', '-crf', '20', '-maxrate', '6M', '-bufsize', '12M', '-preset', 'slow', '-pix_fmt', 'yuv420p', ...(audio ? ['-c:a', 'aac', '-b:a', '192k'] : []), '-movflags', '+faststart', web);
 fs.rmSync(silent);
 
 if (posterFrame !== undefined) {
@@ -55,8 +55,9 @@ if (posterFrame !== undefined) {
 }
 
 if (captions) {
-  // Cues = sentences of the VO, timed from the aligned words (seconds, already offset to film time).
-  const {words, offset = 0} = JSON.parse(fs.readFileSync(captions, 'utf8'));
+  // Either ready-made cues [{start, end, text}] (film seconds) or aligned words to group by sentence.
+  const data = JSON.parse(fs.readFileSync(captions, 'utf8'));
+  const {words = [], offset = 0} = data;
   const ts = (s) => {
     const ms = Math.max(0, Math.round((s + offset) * 1000));
     const h = String(Math.floor(ms / 3600000)).padStart(2, '0');
@@ -74,7 +75,10 @@ if (captions) {
     }
   }
   if (cur.length) cues.push(cur);
-  const vtt = ['WEBVTT', ''].concat(cues.flatMap((c, i) => [String(i + 1), `${ts(c[0].start)} --> ${ts(c[c.length - 1].end + 0.25)}`, c.map((w) => w.text).join(' '), '']));
+  const lines = data.cues
+    ? data.cues.map((c, i) => [String(i + 1), `${ts(c.start)} --> ${ts(c.end)}`, c.text, ''])
+    : cues.map((c, i) => [String(i + 1), `${ts(c[0].start)} --> ${ts(c[c.length - 1].end + 0.25)}`, c.map((w) => w.text).join(' '), '']);
+  const vtt = ['WEBVTT', ''].concat(lines.flat());
   fs.writeFileSync(path.join(outDir, `${id}.en.vtt`), vtt.join('\n'));
 }
 

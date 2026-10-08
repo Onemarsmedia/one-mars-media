@@ -46,6 +46,11 @@ export interface Linked {
 /** Numeric property: static, keyframed, or linked to a controller slider. */
 export type Num = Prop<number> | Linked;
 
+/** A 2D value driven by one controller slider: [slider*x.mul+x.add, slider*y.mul+y.add] (each clamped). */
+export interface LinkedVec2 {
+  linkVec: {layer: string; slider: string; x: Omit<Linked['link'], 'layer' | 'slider'>; y: Omit<Linked['link'], 'layer' | 'slider'>};
+}
+
 export interface Slider {
   name: string;
   value: Prop<number>;
@@ -54,7 +59,7 @@ export interface Slider {
 export interface Transform {
   anchor?: Vec2; // static only: AE anchor is a spatial property, keep it unanimated
   position?: Prop<Vec2>; // emitted with separated dimensions in AE when animated
-  scale?: Prop<Vec2>;
+  scale?: Prop<Vec2> | LinkedVec2;
   rotation?: Num;
   opacity?: Num;
 }
@@ -160,7 +165,9 @@ export type TextSource =
   | {kind: 'typeOn'; text: string; chars: Num}
   | {kind: 'counter'; value: Num; pad: number; prefix?: string; suffix?: string}
   /** One character of a zero-padded counter, so each digit can sit at a fixed position (tabular). */
-  | {kind: 'counterDigit'; value: Num; pad: number; index: number};
+  | {kind: 'counterDigit'; value: Num; pad: number; index: number}
+  /** Text that changes at given frames (AE: Source Text hold keyframes). */
+  | {kind: 'keyed'; keys: Key<string>[]};
 
 export interface TextLayer extends LayerBase {
   kind: 'text';
@@ -193,6 +200,11 @@ export interface PrecompLayer extends LayerBase {
   comp: string;
   /** Comp-time frame at which the precomp's own frame 0 plays. Default 0. */
   startTime?: number;
+  /**
+   * AE "Collapse Transformations": vectors stay sharp when scaled up, and (as in AE) the precomp is
+   * NOT clipped to its own frame.
+   */
+  collapse?: boolean;
 }
 
 export type Layer = ShapeLayer | TextLayer | NullLayer | SolidLayer | PrecompLayer;

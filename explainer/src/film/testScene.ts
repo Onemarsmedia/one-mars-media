@@ -88,6 +88,21 @@ export function buildTestScene(): Scene {
         transform: {position: [900 + i * 60, 920] as [number, number]},
       })),
       {
+        kind: 'text' as const,
+        name: 'keyed label',
+        source: {kind: 'keyed' as const, keys: [key(0, 'Now: 01 Concept'), key(30, 'Now: 02 Storyboard'), key(61, 'Now: 03 Filming')]},
+        font: TEST_FONTS.geistBold,
+        size: 36,
+        color: '#FF4F1A',
+        transform: {position: [120, 700] as [number, number]},
+      },
+      {
+        kind: 'shape' as const,
+        name: 'gauge',
+        items: [{geo: {type: 'rect' as const, size: [200, 100] as [number, number], center: [0, -50] as [number, number]}, fill: {color: '#111214'}}],
+        transform: {anchor: [0, 0] as [number, number], position: [1700, 1000] as [number, number], scale: {linkVec: {layer: '360 CONTROL', slider: 'Degrees', x: {mul: 0, add: 100}, y: {mul: 100 / 360, min: 0, max: 100}}}},
+      },
+      {
         kind: 'null' as const,
         name: 'RIG',
         transform: {...pivot(1500, 300), rotation: anim(key(0, 0, EASE.inOut), key(90, 90))},

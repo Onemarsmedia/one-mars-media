@@ -24,6 +24,11 @@ export function textAt(src: TextSource, t: number, ctx?: LinkCtx): string {
       return (src.prefix ?? '') + padNumber(Math.round(evalNumber(src.value, t, 0, ctx)), src.pad) + (src.suffix ?? '');
     case 'counterDigit':
       return padNumber(Math.abs(Math.round(evalNumber(src.value, t, 0, ctx))), src.pad).charAt(src.index);
+    case 'keyed': {
+      let v = src.keys[0].v;
+      for (const k of src.keys) if (t >= k.t) v = k.v;
+      return v;
+    }
   }
 }
 
@@ -37,5 +42,7 @@ export function baseText(src: TextSource): string {
       return (src.prefix ?? '') + padNumber(0, src.pad) + (src.suffix ?? '');
     case 'counterDigit':
       return '0';
+    case 'keyed':
+      return src.keys[0].v;
   }
 }

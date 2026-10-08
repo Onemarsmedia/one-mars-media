@@ -63,8 +63,18 @@ def main(cfg_path, out_dir):
         fade_out = m.get("fadeOut", 0)
         fade = f",afade=t=out:st={dur - fade_out}:d={fade_out}" if fade_out else ""
         music_raw = os.path.join(tmp, "music.wav")
+        env = ""
+        if m.get("envelope"):
+            # stepped gain changes (dB) at film times, each with a 60 ms linear ramp
+            pts = m["envelope"]
+            lin = lambda db: 10 ** (db / 20)
+            expr = f"{lin(pts[-1][1]):.5f}"
+            for (t0, g0), (t1, g1) in reversed(list(zip(pts, pts[1:]))):
+                r = 0.06
+                expr = f"if(lt(t,{t1}),{lin(g0):.5f},if(lt(t,{t1 + r}),{lin(g0):.5f}+({lin(g1):.5f}-{lin(g0):.5f})*(t-{t1})/{r},{expr}))"
+            env = f",volume='{expr}':eval=frame"
         graph = (
-            f"[0:a]{place(m['file'], m.get('start', 0), m.get('gainDb', -14))}{fade}[m];"
+            f"[0:a]{place(m['file'], m.get('start', 0), m.get('gainDb', -14))}{env}{fade}[m];"
             f"[1:a]aresample={RATE},aformat=channel_layouts=stereo[k];"
             f"[m][k]sidechaincompress=threshold={duck.get('threshold', 0.04)}:ratio={duck.get('ratio', 5)}:"
             f"attack={duck.get('attack', 25)}:release={duck.get('release', 350)}:makeup=1[out]"
@@ -92,10 +102,17 @@ def main(cfg_path, out_dir):
     gain = TARGET_I - i_in
     # Keep true peak under the ceiling: if the gain would push peaks over, a limiter catches the master only.
     peak_after = tp_in + gain
-    limiter = f",alimiter=limit={10 ** (TARGET_TP / 20):.4f}:attack=5:release=50:level=disabled" if peak_after > TARGET_TP else ""
+    # sample-peak ceiling 0.6 dB under the true-peak target leaves room for inter-sample peaks
+    limiter = f",alimiter=limit={10 ** ((TARGET_TP - 0.6) / 20):.4f}:attack=5:release=50:level=disabled" if peak_after > TARGET_TP - 0.6 else ""
 
     master = os.path.join(out_dir, "master.wav")
-    run(["ffmpeg", "-v", "error", "-y", "-i", pre, "-af", f"volume={gain:.3f}dB{limiter}", "-ar", str(RATE), "-c:a", "pcm_s24le", master])
+    # The limiter lowers loudness a little; re-measure and nudge the gain until we land on target.
+    for _ in range(4):
+        run(["ffmpeg", "-v", "error", "-y", "-i", pre, "-af", f"volume={gain:.3f}dB{limiter}", "-ar", str(RATE), "-c:a", "pcm_s24le", master])
+        i_now, _tp = measure(master)
+        if abs(i_now - TARGET_I) < 0.1 or not limiter:
+            break
+        gain += TARGET_I - i_now
     for s in stems:
         name = os.path.basename(s)
         run(["ffmpeg", "-v", "error", "-y", "-i", s, "-af", f"volume={gain:.3f}dB", "-ar", str(RATE), "-c:a", "pcm_s24le", os.path.join(out_dir, "stems", name)])

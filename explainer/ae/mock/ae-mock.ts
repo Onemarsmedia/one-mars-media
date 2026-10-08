@@ -165,16 +165,21 @@ export class MockProperty extends Base {
     if (this.matchName.startsWith('ADBE Position_') && !(this.parentProperty!.property('ADBE Position') as MockProperty & {separated?: boolean}).separated)
       fail(`${this.path()}: X/Y position used while dimensions are not separated`);
   }
+  /** Real AE hands out copies of TextDocuments; store copies so later edits don't leak into keys. */
+  private own(v: unknown) {
+    return v instanceof TextDocument ? Object.assign(new TextDocument(v.text), v) : v;
+  }
   setValue(v: unknown) {
     this.checkSettable();
     if (this.keys.length) fail(`${this.path()}: setValue on a property that has keyframes`);
     this.checkValue(v);
-    this.value = v;
+    this.value = this.own(v);
   }
   setValueAtTime(t: number, v: unknown) {
     this.checkSettable();
     if (typeof t !== 'number' || !isFinite(t)) fail(`${this.path()}: bad key time ${t}`);
     this.checkValue(v);
+    v = this.own(v);
     const existing = this.keys.find((k) => Math.abs(k.t - t) < 1e-9);
     if (existing) existing.v = v;
     else {
@@ -368,6 +373,14 @@ export class MockLayer {
   private _in = 0;
   private _out: number;
   trackMatte: {layer: MockLayer; type: number} | null = null;
+  private _collapse = false;
+  get collapseTransformation() {
+    return this._collapse;
+  }
+  set collapseTransformation(v: boolean) {
+    if (this.kind !== 'precomp') fail(`${this.name}: collapseTransformation only on precomp layers`);
+    this._collapse = v;
+  }
   root: MockGroup;
   constructor(
     public comp: MockComp,
@@ -584,10 +597,13 @@ export function evalMockProperty(p: MockProperty, tSec: number, evalSeg: (t0: nu
   const toArr = (v: unknown) => (Array.isArray(v) ? (v as number[]) : [v as number]);
   if (!p.keys.length) return toArr(p.value);
   const ks = p.keys;
-  if (tSec <= ks[0].t) return toArr(ks[0].v);
-  if (tSec >= ks[ks.length - 1].t) return toArr(ks[ks.length - 1].v);
+  // AE snaps keys to the frame grid; the emitted times carry ~1e-9 s of rounding, so compare with a tolerance.
+  const EPS = 1e-6;
+  if (tSec < ks[0].t + EPS) return toArr(ks[0].v);
+  if (tSec >= ks[ks.length - 1].t - EPS) return toArr(ks[ks.length - 1].v);
   let i = 0;
-  while (tSec >= ks[i + 1].t) i++;
+  while (tSec >= ks[i + 1].t - EPS) i++;
+  if (tSec <= ks[i].t + EPS) return toArr(ks[i].v);
   const a = ks[i];
   const b = ks[i + 1];
   const va = toArr(a.v);
