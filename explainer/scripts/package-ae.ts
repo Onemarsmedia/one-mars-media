@@ -8,7 +8,7 @@
 // property, expression and text is checked against the scene (same checks as tests/run-all.ts).
 //
 // npx tsx scripts/package-ae.ts <mixDir>   (mix.py output: master.wav, stems/, loudness.json)
-import {execFileSync} from 'node:child_process';
+import {execFileSync, spawnSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import * as acorn from 'acorn';
@@ -33,6 +33,20 @@ const stopped = run.alerts.filter((a) => a.startsWith('Build stopped'));
 if (stopped.length) throw new Error(stopped.join('\n'));
 const layers = run.comps.reduce((n, c) => n + c.layerList.length, 0);
 console.log(`jsx ${(jsx.length / 1e6).toFixed(2)} MB, ES3 ok, mock AE ok: ${run.comps.length} comps, ${layers} layers, ${manifest.length} animated properties, ${DURATION} frames`);
+
+// the stems must never clip: each one, and their sum, stays under -1 dBFS sample peak
+function peakDb(files: string[]): number {
+  const ins = files.flatMap((f) => ['-i', f]);
+  const chain = 'aformat=sample_fmts=flt,astats=metadata=0:measure_perchannel=none';
+  const af = files.length > 1 ? ['-filter_complex', `${files.map((_, i) => `[${i}:a]`).join('')}amix=inputs=${files.length}:normalize=0,${chain}`] : ['-af', chain];
+  const r = spawnSync('ffmpeg', ['-hide_banner', '-nostats', ...ins, ...af, '-f', 'null', '-'], {encoding: 'utf8'});
+  const m = /Peak level dB:\s*(-?[\d.]+)/.exec(r.stderr);
+  return m ? Number(m[1]) : NaN;
+}
+const stemFiles = ['vo.wav', 'music.wav', 'sfx.wav'].map((f) => path.join(mixDir, 'stems', f));
+const peaks: Array<[string, number]> = [...stemFiles.map((f): [string, number] => [path.basename(f), peakDb([f])]), ['sum', peakDb(stemFiles)]];
+for (const [n, p] of peaks) if (!(p <= -1)) throw new Error(`stem check: ${n} peaks at ${p} dBFS (must stay under -1)`);
+console.log('stems peak (dBFS):', peaks.map(([n, p]) => `${n} ${p.toFixed(2)}`).join(', '));
 
 fs.writeFileSync(path.join(dir, 'build-onemarsmedia-360.jsx'), jsx);
 fs.copyFileSync(path.join(mixDir, 'master.wav'), path.join(dir, 'audio', 'mix.wav'));
