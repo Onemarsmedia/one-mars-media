@@ -3,7 +3,7 @@
 // Produces in <outDir>:
 //   <id>-master.mp4   H.264 High, CRF 16, AAC 320k (archive / other platforms)
 //   <id>-web.mp4      H.264 High@4.2 (4 refs), ~6 Mbps, AAC 192k, faststart (website)
-//   <id>-720.mp4      H.264 High@3.2, 1280x720, ~3 Mbps, AAC 128k, faststart (website, phones)
+//   <id>-720.mp4      H.264 High@3.2, 1280x720, ~3 Mbps, AAC 160k, faststart (website, phones)
 //   <id>-poster.webp  the poster frame (website <video poster>), plus <id>-poster.jpg (thumbnail)
 //   <id>.en.vtt       captions from the VO word timings (if --captions)
 import {bundle} from '@remotion/bundler';
@@ -48,7 +48,7 @@ const audioMap = audio ? ['-map', '1:a:0', '-shortest'] : [];
 ff('-i', silent, ...audioIn, '-map', '0:v:0', ...audioMap, '-c:v', 'libx264', '-profile:v', 'high', '-crf', '16', '-preset', 'slow', '-pix_fmt', 'yuv420p', ...(audio ? ['-c:a', 'aac', '-b:a', '320k'] : []), '-movflags', '+faststart', master);
 ff('-i', silent, ...audioIn, '-map', '0:v:0', ...audioMap, '-c:v', 'libx264', '-profile:v', 'high', '-level:v', '4.2', '-x264-params', 'ref=4', '-crf', '20', '-maxrate', '6M', '-bufsize', '12M', '-preset', 'slow', '-pix_fmt', 'yuv420p', ...(audio ? ['-c:a', 'aac', '-b:a', '192k'] : []), '-movflags', '+faststart', web);
 const web720 = path.join(outDir, `${id}-720.mp4`);
-ff('-i', silent, ...audioIn, '-map', '0:v:0', ...audioMap, '-vf', 'scale=1280:720:flags=lanczos', '-c:v', 'libx264', '-profile:v', 'high', '-level:v', '3.2', '-x264-params', 'ref=4', '-crf', '21', '-maxrate', '3M', '-bufsize', '6M', '-preset', 'slow', '-pix_fmt', 'yuv420p', ...(audio ? ['-c:a', 'aac', '-b:a', '128k'] : []), '-movflags', '+faststart', web720);
+ff('-i', silent, ...audioIn, '-map', '0:v:0', ...audioMap, '-vf', 'scale=1280:720:flags=lanczos', '-c:v', 'libx264', '-profile:v', 'high', '-level:v', '3.2', '-x264-params', 'ref=4', '-crf', '21', '-maxrate', '3M', '-bufsize', '6M', '-preset', 'slow', '-pix_fmt', 'yuv420p', ...(audio ? ['-c:a', 'aac', '-b:a', '160k'] : []), '-movflags', '+faststart', web720);
 fs.rmSync(silent);
 
 if (posterFrame !== undefined) {
