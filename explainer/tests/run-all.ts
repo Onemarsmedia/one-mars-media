@@ -7,11 +7,11 @@ import * as acorn from 'acorn';
 import {buildTestScene} from '../src/film/testScene';
 import {bezierProgress, bezierToAe, evalAeSegment} from '../src/scene/ease';
 import {springKeys} from '../src/scene/builders';
-import {evalNumber, evalVec2, isAnimated} from '../src/scene/eval';
+import {compLinkCtx, evalNumber, evalVec2, isAnimated, isLinked} from '../src/scene/eval';
 import {textAt} from '../src/scene/text';
-import type {Bezier, Prop, Scene, TextLayer, Vec2} from '../src/scene/types';
+import type {Bezier, Num, Prop, Scene, TextLayer, Vec2} from '../src/scene/types';
 import {emitJsx} from '../ae/emit-jsx';
-import {evalMockProperty, findProperty, runJsx, type MockRun} from '../ae/mock/ae-mock';
+import {evalMockProperty, findProperty, runJsx, type MockLayer, type MockProperty, type MockRun} from '../ae/mock/ae-mock';
 
 let failures = 0;
 let checks = 0;
@@ -74,6 +74,34 @@ section('spring keys settle on target with whole-frame, increasing keys', () => 
   }
 });
 
+const aeAt = (p: MockProperty, tSec: number) => evalMockProperty(p, tSec, (t0, v0, t1, v1, o, i, t) => evalAeSegment(t0, v0, t1, v1, o, i, t));
+
+/** Minimal AE expression environment: effect(name)(matchName).value and thisComp.layer(name).effect(...). */
+function exprEnv(run: MockRun, compName: string, layerName: string, tSec: number) {
+  const comp = run.comps.find((c) => c.name === compName)!;
+  const effectOf = (layer: MockLayer) => (name: string) => (mn: string) => {
+    const parade = layer.property('ADBE Effect Parade') as unknown as {children: {name: string; property(k: string): MockProperty}[]};
+    const fx = parade.children.find((c) => c.name === name);
+    if (!fx) throw new Error(`expression: no effect ${name} on ${layer.name}`);
+    return {value: aeAt(fx.property(mn), tSec)[0]};
+  };
+  const self = comp.layerList.find((l) => l.name === layerName)!;
+  return {
+    effect: effectOf(self),
+    thisComp: {
+      layer: (n: string) => {
+        const l = comp.layerList.find((x) => x.name === n);
+        if (!l) throw new Error(`expression: no layer ${n}`);
+        return {effect: effectOf(l)};
+      },
+    },
+  };
+}
+
+function evalExpr(expr: string, env: ReturnType<typeof exprEnv>, value: unknown): unknown {
+  return new Function('effect', 'thisComp', 'value', `return eval(${JSON.stringify(expr)});`)(env.effect, env.thisComp, value);
+}
+
 function roundTrip(scene: Scene, label: string) {
   const {jsx, manifest} = emitJsx(scene);
   // ES3 syntax (ExtendScript)
@@ -114,6 +142,20 @@ function roundTrip(scene: Scene, label: string) {
   for (const m of manifest) {
     const p = findProperty(run, m.path);
     const comp = Object.values(scene.comps).find((c) => m.path.startsWith(c.name + '/'))!;
+    if (isLinked(m.prop)) {
+      check(p.expression.length > 0 && p.keys.length === 0, `${label}: ${m.path} should be driven by an expression`);
+      const layerName = m.path.split('/')[1];
+      for (let f = 0; f <= comp.duration; f++) {
+        const got = Number(evalExpr(p.expression, exprEnv(run, comp.name, layerName, f / comp.fps), p.value));
+        const want = evalNumber(m.prop as Num, f, 0, compLinkCtx(comp));
+        if (Math.abs(got - want) > 2e-3) {
+          check(false, `${label}: ${m.path} @${f}: expression ${got} vs scene ${want}`);
+          break;
+        }
+        check(true, '');
+      }
+      continue;
+    }
     for (let f = 0; f <= comp.duration; f++) {
       const got = evalMockProperty(p, f / m.fps, (t0, v0, t1, v1, o, i, t) => evalAeSegment(t0, v0, t1, v1, o, i, t));
       let expected: number[];
@@ -136,18 +178,11 @@ function roundTrip(scene: Scene, label: string) {
       if (l.source.kind === 'static') continue;
       const mc = run.comps.find((x) => x.name === c.name)!;
       const ml = mc.layerList.find((x) => x.name === l.name)!;
-      const tp = ml.property('ADBE Text Properties');
-      const td = (tp as unknown as {property(k: string): {expression: string; value: {text: string}}}).property('ADBE Text Document');
-      const slider = findProperty(run, `${c.name}/${l.name}/ADBE Effect Parade/1/ADBE Slider Control-0001`);
-      const sliderName = (slider.parentProperty as unknown as {name: string}).name;
+      const td = (ml.property('ADBE Text Properties') as unknown as {property(k: string): {expression: string; value: {text: string}}}).property('ADBE Text Document');
+      check(td.expression.length > 0, `${label}: ${l.name} has a Source Text expression`);
       for (let f = 0; f <= c.duration; f++) {
-        const sv = evalMockProperty(slider, f / c.fps, (t0, v0, t1, v1, o, i, t) => evalAeSegment(t0, v0, t1, v1, o, i, t))[0];
-        const effect = (name: string) => (prop: string) => {
-          if (name !== sliderName || prop !== 'ADBE Slider Control-0001') throw new Error(`expression references ${name}/${prop}`);
-          return sv;
-        };
-        const out = new Function('effect', 'value', `return eval(${JSON.stringify(td.expression)});`)(effect, td.value.text.replace(/\r/g, '\n'));
-        const want = textAt(l.source, f);
+        const out = evalExpr(td.expression, exprEnv(run, c.name, l.name, f / c.fps), td.value.text.replace(/\r/g, '\n'));
+        const want = textAt(l.source, f, compLinkCtx(c));
         if (out !== want) {
           check(false, `${label}: ${l.name} @${f} expression "${out}" vs "${want}"`);
           break;

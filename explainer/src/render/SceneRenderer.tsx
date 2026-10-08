@@ -1,8 +1,8 @@
 import React from 'react';
-import {evalColor, evalNumber, evalVec2} from '../scene/eval';
+import {compLinkCtx, evalColor, evalNumber, evalVec2, type LinkCtx} from '../scene/eval';
 import {textAt} from '../scene/text';
 import type {Comp, Effect, Geometry, Layer, PathData, Scene, ShapeItem, Stroke, TextLayer, Trim} from '../scene/types';
-import {aeTransform, IDENTITY, multiply, toSvg, type Mat} from './matrix';
+import {aeTransform, multiply, toSvg, type Mat} from './matrix';
 
 // Renders one frame of a Scene comp as SVG, following After Effects semantics:
 //   - layers bottom -> top, visible for in <= t < out
@@ -37,7 +37,7 @@ function layerMatrix(comp: Comp, layer: Layer, t: number, seen: Set<string> = ne
     tr.anchor ?? [0, 0],
     evalVec2(tr.position, t, [0, 0]),
     evalVec2(tr.scale, t, [100, 100]),
-    evalNumber(tr.rotation, t, 0),
+    evalNumber(tr.rotation, t, 0, compLinkCtx(comp)),
   );
   if (!layer.parent) return local;
   if (seen.has(layer.name)) throw new Error(`Parent cycle at ${layer.name}`);
@@ -62,19 +62,19 @@ function geometryElement(g: Geometry, t: number, key: string, paint: React.SVGPr
   return <path key={key} d={pathToD(g.path)} {...(paint as React.SVGProps<SVGPathElement>)} />;
 }
 
-function strokePaint(s: Stroke, t: number, trim: Trim | undefined): React.SVGProps<SVGElement> | null {
+function strokePaint(s: Stroke, t: number, trim: Trim | undefined, ctx: LinkCtx): React.SVGProps<SVGElement> | null {
   const paint: React.SVGProps<SVGElement> = {
     fill: 'none',
     stroke: evalColor(s.color, t),
-    strokeWidth: evalNumber(s.width, t, 1),
-    strokeOpacity: evalNumber(s.opacity, t, 100) / 100,
+    strokeWidth: evalNumber(s.width, t, 1, ctx),
+    strokeOpacity: evalNumber(s.opacity, t, 100, ctx) / 100,
     strokeLinecap: s.cap ?? 'butt',
     strokeLinejoin: s.join ?? 'miter',
   };
   if (trim) {
-    const start = evalNumber(trim.start, t, 0);
-    const end = evalNumber(trim.end, t, 100);
-    const offset = (evalNumber(trim.offset, t, 0) / 360) * 100;
+    const start = evalNumber(trim.start, t, 0, ctx);
+    const end = evalNumber(trim.end, t, 100, ctx);
+    const offset = (evalNumber(trim.offset, t, 0, ctx) / 360) * 100;
     const lo = Math.min(start, end);
     const visible = Math.abs(end - start);
     if (visible <= 0.001) return null;
@@ -89,21 +89,21 @@ function strokePaint(s: Stroke, t: number, trim: Trim | undefined): React.SVGPro
   return paint;
 }
 
-function ShapeItems({items, t}: {items: ShapeItem[]; t: number}) {
+function ShapeItems({items, t, ctx}: {items: ShapeItem[]; t: number; ctx: LinkCtx}) {
   return (
     <>
       {items.map((item, idx) => {
         const geos = Array.isArray(item.geo) ? item.geo : [item.geo];
         const gt = item.transform ?? {};
-        const m = aeTransform(gt.anchor ?? [0, 0], gt.position ?? [0, 0], evalVec2(gt.scale, t, [100, 100]), evalNumber(gt.rotation, t, 0));
-        const opacity = evalNumber(gt.opacity, t, 100) / 100;
+        const m = aeTransform(gt.anchor ?? [0, 0], gt.position ?? [0, 0], evalVec2(gt.scale, t, [100, 100]), evalNumber(gt.rotation, t, 0, ctx));
+        const opacity = evalNumber(gt.opacity, t, 100, ctx) / 100;
         const fillPaint: React.SVGProps<SVGElement> | null = item.fill
-          ? {fill: evalColor(item.fill.color, t), fillOpacity: evalNumber(item.fill.opacity, t, 100) / 100, stroke: 'none'}
+          ? {fill: evalColor(item.fill.color, t), fillOpacity: evalNumber(item.fill.opacity, t, 100, ctx) / 100, stroke: 'none'}
           : null;
-        const sPaint = item.stroke ? strokePaint(item.stroke, t, item.trim) : null;
+        const sPaint = item.stroke ? strokePaint(item.stroke, t, item.trim, ctx) : null;
         if (opacity <= 0) return null;
         return (
-          <g key={idx} transform={m === IDENTITY ? undefined : toSvg(m)} opacity={opacity < 1 ? opacity : undefined}>
+          <g key={idx} transform={toSvg(m)} opacity={opacity < 1 ? opacity : undefined}>
             {fillPaint && geos.map((g, gi) => geometryElement(g, t, `f${gi}`, fillPaint))}
             {sPaint && geos.map((g, gi) => geometryElement(g, t, `s${gi}`, sPaint))}
           </g>
@@ -113,15 +113,17 @@ function ShapeItems({items, t}: {items: ShapeItem[]; t: number}) {
   );
 }
 
-function TextContent({layer, t}: {layer: TextLayer; t: number}) {
-  const value = textAt(layer.source, t);
+function TextContent({layer, t, ctx}: {layer: TextLayer; t: number; ctx: LinkCtx}) {
+  const value = textAt(layer.source, t, ctx);
   const lines = value.split('\n');
   const anchor = layer.justify === 'center' ? 'middle' : layer.justify === 'right' ? 'end' : 'start';
   return (
     <text
       x={0}
       y={0}
-      fill={layer.color}
+      fill={layer.noFill ? 'none' : layer.color}
+      stroke={layer.stroke?.color}
+      strokeWidth={layer.stroke?.width}
       fontFamily={`'${layer.font.family}'`}
       fontWeight={layer.font.weight}
       fontStyle={layer.font.style ?? 'normal'}
@@ -172,11 +174,12 @@ function isVisible(layer: Layer, comp: Comp, t: number): boolean {
 }
 
 function LayerContent({scene, comp, layer, t}: {scene: Scene; comp: Comp; layer: Layer; t: number}): React.ReactNode {
+  const ctx = compLinkCtx(comp);
   switch (layer.kind) {
     case 'shape':
-      return <ShapeItems items={layer.items} t={t} />;
+      return <ShapeItems items={layer.items} t={t} ctx={ctx} />;
     case 'text':
-      return <TextContent layer={layer} t={t} />;
+      return <TextContent layer={layer} t={t} ctx={ctx} />;
     case 'solid':
       return <rect x={0} y={0} width={comp.width} height={comp.height} fill={layer.color} />;
     case 'precomp': {
@@ -201,7 +204,7 @@ function LayerContent({scene, comp, layer, t}: {scene: Scene; comp: Comp; layer:
 
 function RenderedLayer({scene, comp, layer, t}: {scene: Scene; comp: Comp; layer: Layer; t: number}) {
   const m = layerMatrix(comp, layer, t);
-  const opacity = evalNumber(layer.transform?.opacity, t, 100) / 100;
+  const opacity = evalNumber(layer.transform?.opacity, t, 100, compLinkCtx(comp)) / 100;
   const filterId = layer.effects?.length ? nextId('fx') : null;
   const filter = filterId ? effectFilter(filterId, layer.effects!, t) : null;
   return (

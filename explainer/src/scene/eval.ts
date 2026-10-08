@@ -1,5 +1,5 @@
 import {bezierProgress} from './ease';
-import type {Animated, Color, Key, Prop, Vec2} from './types';
+import type {Animated, Color, Comp, Key, Linked, Num, Prop, Vec2} from './types';
 
 export function isAnimated<T>(p: Prop<T> | undefined): p is Animated<T> {
   return typeof p === 'object' && p !== null && !Array.isArray(p) && 'keys' in (p as object);
@@ -21,8 +21,34 @@ function locate<T>(keys: Key<T>[], t: number): {i: number; p: number} {
   return {i, p: bezierProgress(ease, x)};
 }
 
-export function evalNumber(p: Prop<number> | undefined, t: number, fallback: number): number {
+export function isLinked(p: unknown): p is Linked {
+  return typeof p === 'object' && p !== null && 'link' in (p as object);
+}
+
+/** Reads a controller slider's value at frame t. */
+export type LinkCtx = (layer: string, slider: string, t: number) => number;
+
+/** Resolver for one comp: finds the controller layer's slider and evaluates it. */
+export function compLinkCtx(comp: Comp): LinkCtx {
+  return (layerName, sliderName, t) => {
+    const layer = comp.layers.find((l) => l.name === layerName);
+    const slider = layer?.sliders?.find((s) => s.name === sliderName);
+    if (!slider) throw new Error(`Link target ${layerName} > ${sliderName} not found in comp ${comp.name}`);
+    return evalNumber(slider.value, t, 0);
+  };
+}
+
+export function applyLink(l: Linked['link'], sliderValue: number): number {
+  const v = sliderValue * (l.mul ?? 1) + (l.add ?? 0);
+  return Math.min(l.max ?? Infinity, Math.max(l.min ?? -Infinity, v));
+}
+
+export function evalNumber(p: Num | undefined, t: number, fallback: number, ctx?: LinkCtx): number {
   if (p === undefined) return fallback;
+  if (isLinked(p)) {
+    if (!ctx) throw new Error('Linked property evaluated without a comp context');
+    return applyLink(p.link, ctx(p.link.layer, p.link.slider, t));
+  }
   if (!isAnimated(p)) return p;
   const {i, p: q} = locate(p.keys, t);
   const a = p.keys[i].v;

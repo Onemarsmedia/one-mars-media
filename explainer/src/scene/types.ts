@@ -34,12 +34,29 @@ export interface Animated<T> {
 
 export type Prop<T> = T | Animated<T>;
 
+/**
+ * A number driven by a Slider Control on a controller layer of the same comp:
+ * value = clamp(slider * mul + add, min, max). In AE this becomes an expression, so one slider
+ * (e.g. "360 CONTROL" > Degrees) can drive the counter, the ring and the digits together.
+ */
+export interface Linked {
+  link: {layer: string; slider: string; mul?: number; add?: number; min?: number; max?: number};
+}
+
+/** Numeric property: static, keyframed, or linked to a controller slider. */
+export type Num = Prop<number> | Linked;
+
+export interface Slider {
+  name: string;
+  value: Prop<number>;
+}
+
 export interface Transform {
   anchor?: Vec2; // static only: AE anchor is a spatial property, keep it unanimated
   position?: Prop<Vec2>; // emitted with separated dimensions in AE when animated
   scale?: Prop<Vec2>;
-  rotation?: Prop<number>;
-  opacity?: Prop<number>;
+  rotation?: Num;
+  opacity?: Num;
 }
 
 /** Shape-group transform inside a shape layer. Position/anchor stay static (spatial props). */
@@ -47,8 +64,8 @@ export interface GroupTransform {
   anchor?: Vec2;
   position?: Vec2;
   scale?: Prop<Vec2>;
-  rotation?: Prop<number>;
-  opacity?: Prop<number>;
+  rotation?: Num;
+  opacity?: Num;
 }
 
 export interface PathData {
@@ -68,13 +85,13 @@ export type Geometry =
 
 export interface Fill {
   color: Prop<Color>; // colour keys must use 'hold' (eased colour keys are avoided on purpose)
-  opacity?: Prop<number>;
+  opacity?: Num;
 }
 
 export interface Stroke {
   color: Prop<Color>;
-  width: Prop<number>;
-  opacity?: Prop<number>;
+  width: Num;
+  opacity?: Num;
   cap?: 'butt' | 'round' | 'square';
   join?: 'miter' | 'round' | 'bevel';
   /** Dash/gap lengths in px, e.g. [8, 6]. */
@@ -83,9 +100,9 @@ export interface Stroke {
 
 /** Trim Paths, applied to the geometry of its own group. */
 export interface Trim {
-  start?: Prop<number>;
-  end?: Prop<number>;
-  offset?: Prop<number>;
+  start?: Num;
+  end?: Num;
+  offset?: Num;
 }
 
 export interface ShapeItem {
@@ -128,6 +145,8 @@ interface LayerBase {
   effects?: Effect[];
   /** AE label colour index (1-16), purely organisational. */
   label?: number;
+  /** Slider Controls on this layer (use a null named e.g. "360 CONTROL"); Linked props read them. */
+  sliders?: Slider[];
 }
 
 export interface ShapeLayer extends LayerBase {
@@ -138,8 +157,10 @@ export interface ShapeLayer extends LayerBase {
 /** Text that is either fixed, typed on, or a counter. Each maps to a Slider + expression in AE. */
 export type TextSource =
   | {kind: 'static'; text: string}
-  | {kind: 'typeOn'; text: string; chars: Prop<number>}
-  | {kind: 'counter'; value: Prop<number>; pad: number; prefix?: string; suffix?: string};
+  | {kind: 'typeOn'; text: string; chars: Num}
+  | {kind: 'counter'; value: Num; pad: number; prefix?: string; suffix?: string}
+  /** One character of a zero-padded counter, so each digit can sit at a fixed position (tabular). */
+  | {kind: 'counterDigit'; value: Num; pad: number; index: number};
 
 export interface TextLayer extends LayerBase {
   kind: 'text';
@@ -152,6 +173,10 @@ export interface TextLayer extends LayerBase {
   /** Line height in px for multi-line text ("\n" separates lines). */
   leading?: number;
   justify?: 'left' | 'center' | 'right';
+  /** Outline the glyphs (centred stroke, drawn over the fill). */
+  stroke?: {color: Color; width: number};
+  /** Stroke only, no fill (for outline type). */
+  noFill?: boolean;
 }
 
 export interface NullLayer extends LayerBase {

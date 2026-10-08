@@ -1,5 +1,5 @@
 import {bezierToAe} from '../src/scene/ease';
-import {hexToRgb01, isAnimated} from '../src/scene/eval';
+import {hexToRgb01, isAnimated, isLinked} from '../src/scene/eval';
 import {baseText} from '../src/scene/text';
 import type {
   Animated,
@@ -8,6 +8,8 @@ import type {
   Geometry,
   Key,
   Layer,
+  Linked,
+  Num,
   PathData,
   Prop,
   Scene,
@@ -27,7 +29,7 @@ import type {
 export interface ManifestEntry {
   /** Path as the mock records it: comp/layer/matchName/index/... */
   path: string;
-  prop: Prop<number> | Prop<Vec2>;
+  prop: Num | Prop<Vec2>;
   /** For separated position: which dimension this AE property carries. */
   dim?: 0 | 1;
   /** Value scale applied on the way out (e.g. colour or opacity conversions). */
@@ -126,6 +128,8 @@ function keyRows<T extends number | Vec2>(keys: Key<T>[], fps: number, spatial: 
 class Emitter {
   lines: string[] = [];
   manifest: ManifestEntry[] = [];
+  /** Effects added so far on the layer being emitted (manifest paths address effects by index). */
+  fx = 0;
   constructor(private scene: Scene) {}
 
   out(s: string) {
@@ -134,12 +138,16 @@ class Emitter {
 
   /** Emit a spec literal for a property and record it in the manifest. */
   spec<T extends number | Vec2>(
-    p: Prop<T>,
+    p: Prop<T> | Linked,
     fps: number,
     path: string,
     opts: {spatial?: boolean; map?: (v: T) => number | number[]; dim?: 0 | 1; noManifest?: boolean} = {},
   ): string {
     const map = opts.map ?? ((v: T) => (Array.isArray(v) ? [v[0], v[1]] : (v as number)));
+    if (isLinked(p)) {
+      if (!opts.noManifest) this.manifest.push({path, prop: p, fps});
+      return `{x:${jsStr(linkExpr(p) + ';')}}`;
+    }
     if (!isAnimated(p)) return `{v:${lit(map(p as T))}}`;
     const anim = p as Animated<T>;
     if (!opts.noManifest) this.manifest.push({path, prop: p as Prop<number>, dim: opts.dim, spatial: opts.spatial, fps});
@@ -223,9 +231,17 @@ class Emitter {
     const lv = `L[${jsStr(l.name)}]`;
     const base = `${c.name}/${l.name}`;
     const fps = c.fps;
+    this.fx = 0;
     if (l.kind === 'shape') this.emitShapeItems(c, l.name, l.items);
     if (l.kind === 'text') this.emitText(c, l);
-    for (const e of l.effects ?? []) this.emitEffect(c, l.name, e);
+    for (const sl of l.sliders ?? []) {
+      this.fx++;
+      this.out(`addSlider(${lv}, ${jsStr(sl.name)}, ${this.spec(sl.value, fps, `${base}/ADBE Effect Parade/${this.fx}/ADBE Slider Control-0001`)});`);
+    }
+    for (const e of l.effects ?? []) {
+      this.fx++;
+      this.emitEffect(c, l.name, e);
+    }
     const tr = l.transform ?? {};
     if (tr.anchor) this.out(`apply(${lv}.property("ADBE Transform Group").property("ADBE Anchor Point"), {v:${lit(tr.anchor)}});`);
     if (tr.position !== undefined) {
@@ -329,22 +345,31 @@ class Emitter {
   emitText(c: Comp, l: TextLayer) {
     const lv = `L[${jsStr(l.name)}]`;
     const just = {left: 'L', center: 'C', right: 'R'}[l.justify ?? 'left'];
+    const stroke = l.stroke ? `${lit(hexToRgb01(l.stroke.color))}, ${num(l.stroke.width)}` : 'null, 0';
     this.out(
-      `setText(${lv}, ${jsStr(l.font.postscript)}, ${num(l.size)}, ${lit(hexToRgb01(l.color))}, ${num(l.tracking ?? 0)}, ${l.leading !== undefined ? num(l.leading) : 'null'}, "${just}");`,
+      `setText(${lv}, ${jsStr(l.font.postscript)}, ${num(l.size)}, ${lit(hexToRgb01(l.color))}, ${num(l.tracking ?? 0)}, ${l.leading !== undefined ? num(l.leading) : 'null'}, "${just}", ${l.noFill ? 'false' : 'true'}, ${stroke});`,
     );
     const src = l.source;
-    if (src.kind === 'typeOn') {
-      const p = `${c.name}/${l.name}/ADBE Effect Parade/1/ADBE Slider Control-0001`;
-      this.out(`addSlider(${lv}, "Characters", ${this.spec(src.chars, c.fps, p)});`);
-      this.out(`setTextExpr(${lv}, ${jsStr('var n = Math.round(effect("Characters")("ADBE Slider Control-0001")); value.substr(0, Math.max(0, n));')});`);
-    } else if (src.kind === 'counter') {
-      const p = `${c.name}/${l.name}/ADBE Effect Parade/1/ADBE Slider Control-0001`;
-      this.out(`addSlider(${lv}, "Value", ${this.spec(src.value, c.fps, p)});`);
-      const expr =
-        `var n = Math.round(effect("Value")("ADBE Slider Control-0001")); var s = String(Math.abs(n)); ` +
-        `while (s.length < ${src.pad}) s = "0" + s; ${jsStr(src.prefix ?? '')} + (n < 0 ? "-" : "") + s + ${jsStr(src.suffix ?? '')};`;
-      this.out(`setTextExpr(${lv}, ${jsStr(expr)});`);
+    if (src.kind === 'static') return;
+    // The number behind the text: a linked controller slider, or the layer's own slider.
+    const numberProp = src.kind === 'typeOn' ? src.chars : src.value;
+    const ownName = src.kind === 'typeOn' ? 'Characters' : 'Value';
+    let n: string;
+    if (isLinked(numberProp)) n = `(${linkExpr(numberProp)})`;
+    else {
+      this.fx++;
+      const p = `${c.name}/${l.name}/ADBE Effect Parade/${this.fx}/ADBE Slider Control-0001`;
+      this.out(`addSlider(${lv}, "${ownName}", ${this.spec(numberProp, c.fps, p)});`);
+      n = `effect("${ownName}")("ADBE Slider Control-0001").value`;
     }
+    let expr: string;
+    if (src.kind === 'typeOn') expr = `var n = Math.round(${n}); value.substr(0, Math.max(0, n));`;
+    else if (src.kind === 'counter')
+      expr =
+        `var n = Math.round(${n}); var s = String(Math.abs(n)); ` +
+        `while (s.length < ${src.pad}) s = "0" + s; ${jsStr(src.prefix ?? '')} + (n < 0 ? "-" : "") + s + ${jsStr(src.suffix ?? '')};`;
+    else expr = `var n = Math.round(${n}); var s = String(Math.abs(n)); while (s.length < ${src.pad}) s = "0" + s; s.charAt(${src.index});`;
+    this.out(`setTextExpr(${lv}, ${jsStr(expr)});`);
   }
 
   emitEffect(c: Comp, layerName: string, e: Effect) {
@@ -355,6 +380,15 @@ class Emitter {
       this.out(`addBlur(${lv}, ${this.spec(e.amount, c.fps, `${c.name}/${layerName}/ADBE Effect Parade/?/ADBE Gaussian Blur 2-0001`, {noManifest: true})});`);
     }
   }
+}
+
+/** AE expression (single statement value) for a linked number. */
+export function linkExpr(p: Linked): string {
+  const l = p.link;
+  let e = `thisComp.layer(${jsStr(l.layer)}).effect(${jsStr(l.slider)})("ADBE Slider Control-0001").value * ${num(l.mul ?? 1)} + ${num(l.add ?? 0)}`;
+  if (l.min !== undefined) e = `Math.max(${num(l.min)}, ${e})`;
+  if (l.max !== undefined) e = `Math.min(${num(l.max)}, ${e})`;
+  return e;
 }
 
 export function emitJsx(scene: Scene): EmitResult {
@@ -371,7 +405,17 @@ export function validateScene(scene: Scene) {
       if (names.has(l.name)) throw new Error(`Duplicate layer name "${l.name}" in comp ${c.name}`);
       names.add(l.name);
     }
+    const sliderNames = new Map(c.layers.map((l) => [l.name, new Set((l.sliders ?? []).map((x) => x.name))]));
+    const checkLinks = (where: string, v: unknown) => {
+      if (Array.isArray(v) || typeof v !== 'object' || v === null) return;
+      if (isLinked(v)) {
+        if (!sliderNames.get(v.link.layer)?.has(v.link.slider)) throw new Error(`${where}: link ${v.link.layer} > ${v.link.slider} not found in comp ${c.name}`);
+        return;
+      }
+      for (const x of Object.values(v as object)) checkLinks(where, x);
+    };
     for (const l of c.layers) {
+      checkLinks(`${c.name}/${l.name}`, l);
       if (l.parent && !names.has(l.parent)) throw new Error(`${c.name}/${l.name}: parent ${l.parent} not found`);
       if (l.matte && !names.has(l.matte.layer)) throw new Error(`${c.name}/${l.name}: matte ${l.matte.layer} not found`);
       if (l.kind === 'shape') {
@@ -467,6 +511,7 @@ function mkEase(arr, n) {
 }
 function apply(prop, spec) {
   if (spec === null) return;
+  if (spec.x) { prop.expression = spec.x; return; }
   if (spec.k) {
     var ks = spec.k, i, idx, n;
     for (i = 0; i < ks.length; i++) prop.setValueAtTime(ks[i][0], fitVal(prop, ks[i][1]));
@@ -563,16 +608,23 @@ function groupTransform(l, gi, anchor, position, scale, rotation, opacity) {
   apply(grp(l, gi).property("ADBE Vector Transform Group").property("ADBE Vector Group Opacity"), opacity);
 }
 function textProp(l) { return l.property("ADBE Text Properties").property("ADBE Text Document"); }
-function setText(l, font, size, rgb, tracking, leading, just) {
+function setText(l, font, size, rgb, tracking, leading, just, fill, strokeRgb, strokeWidth) {
   var td = textProp(l).value;
   var txt = td.text;
   td.resetCharStyle();
   td.resetParagraphStyle();
   td.font = font;
   td.fontSize = size;
-  td.applyFill = true;
+  td.applyFill = fill;
   td.fillColor = rgb;
-  td.applyStroke = false;
+  if (strokeRgb) {
+    td.applyStroke = true;
+    td.strokeColor = strokeRgb;
+    td.strokeWidth = strokeWidth;
+    td.strokeOverFill = true;
+  } else {
+    td.applyStroke = false;
+  }
   td.tracking = tracking;
   if (leading !== null) { td.autoLeading = false; td.leading = leading; }
   td.justification = just === "C" ? ParagraphJustification.CENTER_JUSTIFY : (just === "R" ? ParagraphJustification.RIGHT_JUSTIFY : ParagraphJustification.LEFT_JUSTIFY);

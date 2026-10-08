@@ -62,6 +62,9 @@ export class TextDocument {
   applyFill = true;
   fillColor: number[] = [1, 1, 1];
   applyStroke = false;
+  strokeColor: number[] = [0, 0, 0];
+  strokeWidth = 1;
+  strokeOverFill = true;
   tracking = 0;
   leading = 0;
   autoLeading = true;

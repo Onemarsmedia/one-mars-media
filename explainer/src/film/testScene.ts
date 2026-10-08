@@ -61,6 +61,34 @@ export function buildTestScene(): Scene {
     layers: [
       {
         kind: 'null' as const,
+        name: '360 CONTROL',
+        sliders: [{name: 'Degrees', value: anim(key(10, 0, EASE.out), key(40, 90, 'hold'), key(55, 90, EASE.snap), key(70, 360))}],
+      },
+      {
+        kind: 'shape' as const,
+        name: 'linked ring',
+        items: [
+          {
+            geo: {type: 'path' as const, path: circlePath(960, 880, 120)},
+            stroke: {color: '#111214', width: 14, cap: 'butt' as const},
+            trim: {end: {link: {layer: '360 CONTROL', slider: 'Degrees', mul: 100 / 360, add: 0, min: 0, max: 100}}},
+          },
+        ],
+      },
+      ...[0, 1, 2].map((i) => ({
+        kind: 'text' as const,
+        name: `digit ${i + 1}`,
+        source: {kind: 'counterDigit' as const, value: {link: {layer: '360 CONTROL', slider: 'Degrees'}}, pad: 3, index: i},
+        font: TEST_FONTS.anton,
+        size: 110,
+        color: '#111214',
+        noFill: i === 0,
+        stroke: i === 0 ? {color: '#111214', width: 3} : undefined,
+        justify: 'center' as const,
+        transform: {position: [900 + i * 60, 920] as [number, number]},
+      })),
+      {
+        kind: 'null' as const,
         name: 'RIG',
         transform: {...pivot(1500, 300), rotation: anim(key(0, 0, EASE.inOut), key(90, 90))},
       },
