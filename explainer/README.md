@@ -1,8 +1,9 @@
 # Onemarsmedia 360 explainer
 
-54-second website explainer ("One brief → the whole campaign"), Editorial direction, v5:
+54-second website explainer ("One brief → the whole campaign"), Editorial direction, v6:
 one camera flies over a single page with no cuts, every tile lands on a beat and stays long enough to read,
-the page has 2.5D depth (grid, shadows and tiles on separate planes), an arrow cursor leads the eye, and
+the page has 2.5D depth (a drifting backdrop, grid, shadows and tiles on separate planes), the camera flows
+and banks gently, an arrow cursor leads the eye, and
 the film ends on a clear credit card (Onemarsmedia Limited, directed by Marek Mars). 60 fps, motion blur.
 The film is described once in an After-Effects-shaped scene model and rendered two ways:
 
@@ -43,10 +44,12 @@ The website uses the versioned copies in `../public/video/`.
 
 - **Words on screen / layout / timing:** `src/film/editorial/film.ts`. Every event is derived from
   `timing/vo.json` (word times) and `timing/plan.json` (beat grid, music edit).
-- **Camera:** the `CAMERA` table in `film.ts` (time, world point at the centre of the screen, zoom, ease).
-  In AE it is the null `CAMERA` (scale) and the precomp `WORLD` (position). Two depth planes follow it at
-  perspective-correct scales (`planeScale`, `DEPTH`): `CAMERA BACK`/`WORLD BACK` (grid) and
-  `CAMERA SHADOWS`/`WORLD SHADOWS` (tile shadows).
+- **Camera:** the `CAMERA` table in `film.ts` (time, world point at the centre of the screen, zoom). `flowEases`
+  gives every waypoint a speed (Steffen's monotone cubic), so the camera glides through holds instead of
+  stopping, without overshoot; the keys stay sparse and exact in AE. In AE it is the null `CAMERA` (scale) and
+  the precomp `WORLD` (position), under `CAMERA RIG`, whose rotation banks up to 1 deg on sideways moves
+  (`rigRoll`). Four depth planes follow at perspective-correct scales (`planeScale`, `DEPTH`): `WORLD FAR` and
+  `WORLD MID` (the backdrop: rings, half-discs and arcs in `BACKDROP`), `WORLD BACK` (grid) and `WORLD SHADOWS`.
 - **Shadows:** `shadowLayers()` (tiles: soft key + contact shadow, both pop with the tile on its hit), the column
   shadow in `indexComp()` and the sticky masthead shadow in `mastheadLayers()`. They are stacked rects with a
   Gaussian falloff (`shadowSteps`), not effects: the MP4 and AE match exactly and the softness scales with the camera.

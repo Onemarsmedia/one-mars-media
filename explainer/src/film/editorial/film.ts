@@ -1,7 +1,7 @@
 import {circlePath, key} from '../../scene/builders';
 import {bezierProgress} from '../../scene/ease';
-import {evalVec2} from '../../scene/eval';
-import type {AudioClip, Bezier, Comp, Key, Layer, Prop, Scene, ShapeItem, TextLayer, Transform, Vec2} from '../../scene/types';
+import {evalNumber, evalVec2} from '../../scene/eval';
+import type {AudioClip, Bezier, Comp, Ease, Key, Layer, Prop, Scene, ShapeItem, TextLayer, Transform, Vec2} from '../../scene/types';
 import metrics from './metrics.json';
 import {cardShadow, shadowSteps} from './shadows';
 import {buildTileComps, TILE, tileInfo} from './tiles';
@@ -78,46 +78,123 @@ export const DURATION = Math.ceil(S.button + 3.6) * FPS;
 
 // ------------------------------------------------------------------ camera
 // c = world point at the centre of the screen, z = zoom (%). WORLD position = -c, CAMERA scale = z.
-// Each row is held until its third tile has been on screen for ROW_HOLD; heroes for HERO_HOLD.
-type Cam = {t: number; c: Vec2; z: number; e?: Bezier};
-const [, , T90, , , T180, , , T270, T300, , T360] = S.tileOn;
+// The camera flows: the table says where it is when (every tile still lands in frame on its beat), and
+// flowEases() gives it a speed at every waypoint (Steffen's monotone cubic), so it glides through the
+// holds and only comes to rest where it turns back, never overshooting. The keys stay sparse and exact
+// in AE: each segment is a cubic with 33.3 % influence and speeds from the tangents.
+type Cam = {t: number; c: Vec2; z: number; stop?: boolean};
+const [, , T90, , , T180, , , T270, , , T360] = S.tileOn;
 const MOVES = {
-  filmingPush: T90 - 0.88,
+  filmingPush: T90 - 1.2,
   row1Right: T90 + HERO_HOLD,
-  counter: T180 + ROW_HOLD,
-  row2Left: S.nowTake - 0.3,
-  row2Right: T270 + ROW_HOLD - 0.2,
-  distributionPush: T360 - 0.98,
+  counter: T180 + 1.2,
+  row2Left: S.nowTake - 0.5,
+  row2Right: T270 + 1.2,
+  distributionPush: T360 - 1.2,
   pullBack: T360 + HERO_HOLD,
   endCard: S.endOut + 0.05,
 };
 const CAMERA: Cam[] = [
-  {t: 0, c: [600, 360], z: 145, e: [0.25, 0.55, 0.3, 1]}, // frame 0 is already moving: pulling out from the headline
-  {t: 1.6, c: [958, 532], z: 101.5, e: SOFT},
-  {t: S.brk - 0.6, c: [958, 528], z: 103, e: MOVE}, // a slow push while the brief is edited
-  {t: S.brk + 1.0, c: [960, 540], z: 100, e: SOFT}, // out to the page as the brief breaks into the grid
-  {t: S.tileOn[0] - 2.2, c: [960, 540], z: 101.5, e: MOVE},
-  {t: S.tileOn[0] - 1.0, c: [540, 300], z: 172, e: SOFT}, // "It starts with the idea": row 1, left
-  {t: MOVES.filmingPush, c: [595, 290], z: 175.5, e: PUSH},
-  {t: T90, c: [948, 233.5], z: 320, e: SOFT}, // 090: FILMING hero (tile at the left margin, as f2)
-  {t: MOVES.row1Right, c: [952, 236], z: 326, e: MOVE},
-  {t: MOVES.row1Right + 1.1, c: [1310, 300], z: 172, e: SOFT}, // "Then we shape it": row 1, right
-  {t: MOVES.counter, c: [1370, 290], z: 176, e: MOVE},
-  {t: MOVES.counter + 0.8, c: [1452, 868], z: 205, e: SOFT}, // "That's halfway": the counter (row 2 kept clear of the masthead)
-  {t: MOVES.row2Left, c: [1452, 868], z: 210, e: MOVE},
-  {t: MOVES.row2Left + 1.1, c: [640, 674], z: 150, e: SOFT}, // "Now take it everywhere": row 2 with the status line and the ruler
-  {t: MOVES.row2Right, c: [690, 672], z: 153, e: MOVE},
-  {t: Math.min(MOVES.row2Right + 0.8, T300 - 0.15), c: [1250, 674], z: 150, e: SOFT}, // row 2, right, with the whole counter
-  {t: MOVES.distributionPush, c: [1290, 672], z: 153, e: PUSH},
-  {t: T360, c: [1854, 511], z: 320, e: SOFT}, // 360: DISTRIBUTION hero
-  {t: MOVES.pullBack, c: [1854, 511], z: 326, e: MOVE},
-  {t: S.wall, c: [960, 540], z: 100, e: SOFT}, // "That's three-sixty": the whole wall
-  {t: MOVES.endCard, c: [960, 540], z: 101.5, e: MOVE},
-  {t: MOVES.endCard + 0.8, c: [960, 540], z: 100}, // the sign-off and the final card: the camera rests, page and masthead share the margins
-  {t: DURATION / FPS, c: [960, 540], z: 100},
+  {t: 0, c: [600, 360], z: 145}, // frame 0 is already moving: pulling out from the headline
+  {t: 1.5, c: [930, 515], z: 104},
+  {t: S.video + 0.8, c: [1560, 236], z: 200}, // in on the memo (clear of the headline): "A video" is struck, "Every angle." is written
+  {t: S.every + 0.55, c: [1576, 232], z: 205},
+  {t: S.brk + 1.0, c: [960, 540], z: 100}, // out to the page as the brief breaks into the grid
+  {t: S.tileOn[0] - 0.9, c: [540, 300], z: 172}, // "It starts with the idea": row 1, left
+  {t: MOVES.filmingPush, c: [600, 290], z: 176},
+  {t: T90, c: [948, 233.5], z: 320}, // 090: FILMING hero (tile at the left margin, as f2)
+  {t: MOVES.row1Right, c: [958, 236], z: 326},
+  {t: MOVES.row1Right + 1.2, c: [1300, 300], z: 172}, // "Then we shape it": row 1, right
+  {t: MOVES.counter, c: [1376, 292], z: 177},
+  {t: MOVES.counter + 1.15, c: [1452, 868], z: 205}, // "That's halfway": the counter (row 2 kept clear of the masthead)
+  {t: MOVES.row2Left, c: [1448, 866], z: 210},
+  {t: MOVES.row2Left + 0.75, c: [1060, 770], z: 132}, // up and over...
+  {t: MOVES.row2Left + 1.7, c: [640, 674], z: 150}, // ...down onto row 2 with the status line and the ruler
+  {t: MOVES.row2Right, c: [720, 671], z: 154},
+  {t: MOVES.row2Right + 1.1, c: [1250, 674], z: 150}, // row 2, right, with the whole counter
+  {t: MOVES.distributionPush, c: [1300, 672], z: 154},
+  {t: T360, c: [1854, 511], z: 320}, // 360: DISTRIBUTION hero
+  {t: MOVES.pullBack, c: [1846, 513], z: 326},
+  {t: S.wall, c: [960, 540], z: 100}, // "That's three-sixty": the whole wall
+  {t: MOVES.endCard, c: [960, 540], z: 101.5},
+  {t: MOVES.endCard + 0.8, c: [960, 540], z: 100}, // the sign-off and the final card: page and masthead share the margins
+  {t: DURATION / FPS, c: [960, 540], z: 103, stop: true}, // a slow push to the end
 ];
-const camPos: Prop<Vec2> = {keys: CAMERA.map((k) => key(f(k.t), [-k.c[0], -k.c[1]] as Vec2, k.e))};
-const camScale: Prop<Vec2> = {keys: CAMERA.map((k) => key(f(k.t), [k.z, k.z] as Vec2, k.e))};
+
+/** Steffen's monotone tangents (units per second) through (x, y): smooth, no overshoot, flat at turns. */
+function steffen(x: number[], y: number[], stops: boolean[]): number[] {
+  const n = x.length;
+  const h = x.slice(1).map((v, i) => v - x[i]);
+  const d = h.map((hi, i) => (y[i + 1] - y[i]) / hi);
+  const m = new Array<number>(n).fill(0);
+  for (let i = 1; i < n - 1; i++) {
+    const p = (d[i - 1] * h[i] + d[i] * h[i - 1]) / (h[i - 1] + h[i]);
+    m[i] = (Math.sign(d[i - 1]) + Math.sign(d[i])) * Math.min(Math.abs(d[i - 1]), Math.abs(d[i]), 0.5 * Math.abs(p));
+  }
+  if (n > 2) {
+    // the first point keeps moving (one-sided, as Steffen); the last one rests
+    const p0 = d[0] * (1 + h[0] / (h[0] + h[1])) - (d[1] * h[0]) / (h[0] + h[1]);
+    m[0] = Math.sign(p0) !== Math.sign(d[0]) ? 0 : Math.abs(p0) > 2 * Math.abs(d[0]) ? 2 * d[0] : p0;
+  }
+  return m.map((v, i) => (stops[i] || i === n - 1 ? 0 : v));
+}
+const clamp3 = (v: number) => Math.min(3, Math.max(0, v));
+/** A Hermite segment as a normalised cubic bezier (x at 1/3 and 2/3: AE influence 33.3 %). */
+const hermite = (a: number, b: number): Bezier => [1 / 3, clamp3(a) / 3, 2 / 3, 1 - clamp3(b) / 3];
+/** Segment eases for a 1D series: speeds at the ends from the tangents. */
+function flowEases(ts: number[], ys: number[], stops: boolean[]): Ease[] {
+  const m = steffen(ts, ys, stops);
+  return ts.map((t, i) => {
+    if (i === ts.length - 1) return 'linear';
+    const dv = ys[i + 1] - ys[i];
+    const h = ts[i + 1] - t;
+    return Math.abs(dv) < 1e-6 ? 'linear' : hermite((m[i] * h) / dv, (m[i + 1] * h) / dv);
+  });
+}
+/** Segment eases for the 2D centre: both axes share one progress, so the tangents are projected on each chord. */
+function flowEases2(ts: number[], cs: Vec2[], stops: boolean[]): Ease[] {
+  const mx = steffen(ts, cs.map((c) => c[0]), stops);
+  const my = steffen(ts, cs.map((c) => c[1]), stops);
+  return ts.map((t, i) => {
+    if (i === ts.length - 1) return 'linear';
+    const dx = cs[i + 1][0] - cs[i][0];
+    const dy = cs[i + 1][1] - cs[i][1];
+    const l2 = dx * dx + dy * dy;
+    const h = ts[i + 1] - t;
+    return l2 < 0.25 ? 'linear' : hermite(((mx[i] * dx + my[i] * dy) / l2) * h, ((mx[i + 1] * dx + my[i + 1] * dy) / l2) * h);
+  });
+}
+const camT = CAMERA.map((k) => f(k.t) / FPS); // on the frame grid, as keyed
+const camStops = CAMERA.map((k) => !!k.stop);
+const posEase = flowEases2(camT, CAMERA.map((k) => k.c), camStops);
+const zoomEase = flowEases(camT, CAMERA.map((k) => k.z), camStops);
+const camPos: Prop<Vec2> = {keys: CAMERA.map((k, i) => key(f(k.t), [-k.c[0], -k.c[1]] as Vec2, posEase[i]))};
+const camScale: Prop<Vec2> = {keys: CAMERA.map((k, i) => key(f(k.t), [k.z, k.z] as Vec2, zoomEase[i]))};
+
+// The rig banks into sideways moves, from the camera's horizontal speed on screen: at most ROLL_MAX deg
+// on the fastest one, level in every hold. Keyed at the waypoints and at each move's fastest frame.
+const ROLL_MAX = 1;
+const sideSpeed = (fr: number) => {
+  const z = evalVec2(camScale, fr, [100, 100])[0] / 100;
+  return ((evalVec2(camPos, fr - 0.5, [0, 0])[0] - evalVec2(camPos, fr + 0.5, [0, 0])[0]) * z * FPS); // px/s, + = moving right
+};
+const rigRoll: Prop<number> = (() => {
+  const frames = new Set<number>(CAMERA.map((k) => f(k.t)));
+  for (let i = 0; i < CAMERA.length - 1; i++) {
+    let best = f(CAMERA[i].t);
+    for (let fr = f(CAMERA[i].t); fr <= f(CAMERA[i + 1].t); fr++) if (Math.abs(sideSpeed(fr)) > Math.abs(sideSpeed(best))) best = fr;
+    frames.add(best);
+  }
+  const fs = [...frames].sort((a, b) => a - b).filter((fr, i, a) => i === 0 || fr - a[i - 1] >= 4 || fr === f(DURATION / FPS));
+  let peak = 0;
+  for (let fr = 0; fr < DURATION; fr++) peak = Math.max(peak, Math.abs(sideSpeed(fr)));
+  const ts = fs.map((fr) => fr / FPS);
+  const vs = fs.map((fr) => Math.round((-ROLL_MAX * sideSpeed(fr) * 1000) / peak) / 1000);
+  const ease = flowEases(ts, vs, fs.map(() => false));
+  return {keys: fs.map((fr, i) => key(fr, vs[i], ease[i]))};
+})();
+/** The rig at frame t: zoom (x1), -centre, bank (rad). */
+const rigAt = (t: number) => ({z: evalVec2(camScale, t, [100, 100])[0] / 100, c: evalVec2(camPos, t, [0, 0]), r: (evalNumber(rigRoll, t, 0) * Math.PI) / 180});
 
 // ------------------------------------------------------------------ depth (2.5D)
 // The page content is the reference plane. The column grid sits deeper and the tiles' shadows just below
@@ -125,9 +202,62 @@ const camScale: Prop<Vec2> = {keys: CAMERA.map((k) => key(f(k.t), [k.z, k.z] as 
 // slide against each other as the camera flies and grows apart as it pushes in. Same key times and eases
 // as the main camera (in AE: a null per plane, "CAMERA BACK" / "CAMERA SHADOWS").
 const FOCAL = 2000; // px
-const DEPTH = {back: -60, shadows: -14}; // px towards the camera (negative = further away)
+const DEPTH = {far: -520, mid: -220, back: -60, shadows: -14}; // px towards the camera (negative = further away)
 const planeScale = (zoom: number, depth: number) => (FOCAL / ((FOCAL * 100) / zoom - depth)) * 100;
-const planeCam = (depth: number): Prop<Vec2> => ({keys: CAMERA.map((k) => key(f(k.t), [planeScale(k.z, depth), planeScale(k.z, depth)] as Vec2, k.e))});
+const planeCam = (depth: number): Prop<Vec2> => ({keys: CAMERA.map((k, i) => key(f(k.t), [planeScale(k.z, depth), planeScale(k.z, depth)] as Vec2, zoomEase[i]))});
+
+// ------------------------------------------------------------------ backdrop (brand geometry on the deep planes)
+// The film's own shapes, big and quiet: rings (the 360 ring), half-discs (the suns in the tiles) and arcs,
+// in paper tones only (red stays with the content). Two planes far behind the page, so they slide slower than the page as
+// the camera flies; each shape also drifts and turns slowly on its own. Opaque cards and columns cover them.
+type Deco = {kind: 'ring' | 'half' | 'arc'; c: Vec2; r: number; w?: number; color: string; op: number; spin?: number; drift?: Vec2; trim?: [number, number]; rot?: number};
+const BACKDROP: Record<'far' | 'mid', Deco[]> = {
+  far: [
+    {kind: 'ring', c: [250, 900], r: 330, w: 56, color: C.p2, op: 70, drift: [30, -20]},
+    {kind: 'half', c: [1660, 1150], r: 320, color: C.p2, op: 65, spin: 10, drift: [-40, 0]},
+    {kind: 'arc', c: [1000, -260], r: 470, w: 40, color: C.p2, op: 70, trim: [8, 42], spin: 14},
+    {kind: 'half', c: [-180, 380], r: 260, color: C.p2, op: 60, rot: 90, spin: -8, drift: [20, 30]},
+    {kind: 'ring', c: [2140, 300], r: 230, w: 36, color: C.p2, op: 65, drift: [-30, 20]},
+  ],
+  mid: [
+    {kind: 'arc', c: [760, 1010], r: 190, w: 20, color: C.soft, op: 45, trim: [55, 92], spin: 30},
+    {kind: 'ring', c: [-60, -40], r: 150, w: 16, color: C.soft, op: 40, drift: [20, 25]},
+    {kind: 'arc', c: [2010, 880], r: 160, w: 18, color: C.soft, op: 45, trim: [20, 60], spin: -26},
+  ],
+};
+const KAPPA = 0.5522847498;
+function decoLayer(d: Deco, i: number, plane: string): Layer {
+  const k = KAPPA * d.r;
+  const geo =
+    d.kind === 'half'
+      ? {type: 'path' as const, path: {v: [[-d.r, 0], [0, -d.r], [d.r, 0]] as Vec2[], i: [[0, 0], [-k, 0], [0, -k]] as Vec2[], o: [[0, -k], [k, 0], [0, 0]] as Vec2[], closed: true}}
+      : {type: 'path' as const, path: circlePath(0, 0, d.r)};
+  const item: ShapeItem =
+    d.kind === 'half'
+      ? {geo, fill: {color: d.color, opacity: d.op}}
+      : {geo, stroke: {color: d.color, width: d.w ?? 20, opacity: d.op, cap: 'butt'}, ...(d.trim ? {trim: {start: d.trim[0], end: d.trim[1]}} : {})};
+  const end = DURATION - 1;
+  const dr = d.drift ?? [0, 0];
+  return {
+    kind: 'shape',
+    name: `${plane} ${String(i + 1).padStart(2, '0')} ${d.kind}`,
+    items: [item],
+    transform: {
+      anchor: [0, 0],
+      position: {keys: [key(0, d.c, 'linear'), key(end, [d.c[0] + dr[0], d.c[1] + dr[1]] as Vec2)]},
+      rotation: d.spin ? {keys: [key(0, d.rot ?? 0, 'linear'), key(end, (d.rot ?? 0) + d.spin)]} : d.rot ?? 0,
+    },
+    label: 16,
+  };
+}
+const backdropComp = (plane: 'far' | 'mid'): Comp => ({
+  name: `WORLD ${plane.toUpperCase()}`,
+  width: W,
+  height: H,
+  fps: FPS,
+  duration: DURATION,
+  layers: BACKDROP[plane].map((d, i) => decoLayer(d, i, plane)),
+});
 
 // ------------------------------------------------------------------ small builders
 const rect = (x: number, y: number, w: number, h: number, color: string, opacity = 100): ShapeItem => ({
@@ -807,7 +937,7 @@ function cursorPlan(): WP[] {
     {t: S.video - 0.15, p: [1440, 250]},
     {t: S.every - 0.04, p: [1468, 228], click: true}, // strike "A video"
     {t: S.every + 0.4, p: [1468, 228]},
-    {t: S.brk - 0.05, p: [540, 330], click: true}, // the brief breaks into the slots
+    {t: S.brk - 0.05, p: [860, 360], click: true}, // the brief breaks into the slots (as the camera pulls back from the memo)
   ];
   const hold = (t: number, p: Vec2) => w.push({t, p});
   const glideTo = (t: number, p: Vec2, click = false) => {
@@ -833,9 +963,10 @@ function cursorPlan(): WP[] {
   return w;
 }
 const worldToScreen = (t: number, p: Vec2): Vec2 => {
-  const z = evalVec2(camScale, t, [100, 100])[0] / 100;
-  const c = evalVec2(camPos, t, [0, 0]);
-  return [W / 2 + z * (p[0] + c[0]), H / 2 + z * (p[1] + c[1])];
+  const {z, c, r} = rigAt(t);
+  const x = z * (p[0] + c[0]);
+  const y = z * (p[1] + c[1]);
+  return [W / 2 + Math.cos(r) * x - Math.sin(r) * y, H / 2 + Math.sin(r) * x + Math.cos(r) * y];
 };
 function cursorWorld(w: WP[], tSec: number): Vec2 {
   let k = 0;
@@ -923,6 +1054,8 @@ export function buildEditorialScene(): Scene {
     ],
   });
   add({name: 'WORLD SHADOWS', width: W, height: H, fps: FPS, duration: DURATION, layers: shadowLayers()});
+  add(backdropComp('far'));
+  add(backdropComp('mid'));
   add({
     name: 'WORLD',
     width: W,
@@ -962,11 +1095,18 @@ export function buildEditorialScene(): Scene {
       {t: T.button, label: 'Music button: credits'},
     ],
     layers: [
-      {kind: 'null', name: 'CAMERA BACK', transform: {anchor: [0, 0], position: [W / 2, H / 2], scale: planeCam(DEPTH.back)}, label: 2},
+      // the rig banks every plane together around the centre of the screen; each plane's null scales it for its depth
+      {kind: 'null', name: 'CAMERA RIG', transform: {anchor: [0, 0], position: [W / 2, H / 2], rotation: rigRoll}, label: 2},
+      ...(['far', 'mid'] as const).map((pl): Layer[] => [
+        {kind: 'null', name: `CAMERA ${pl.toUpperCase()}`, parent: 'CAMERA RIG', transform: {anchor: [0, 0], position: [0, 0], scale: planeCam(DEPTH[pl])}, label: 2},
+        // quieter under the sign-off and the final card
+        {kind: 'precomp', name: `WORLD ${pl.toUpperCase()}`, comp: `WORLD ${pl.toUpperCase()}`, collapse: true, parent: `CAMERA ${pl.toUpperCase()}`, transform: {anchor: [0, 0], position: camPos, opacity: {keys: [key(f(S.endOut), 100, SOFT), key(f(S.endOut + 1.2), 40)]}}, label: 16},
+      ]).flat(),
+      {kind: 'null', name: 'CAMERA BACK', parent: 'CAMERA RIG', transform: {anchor: [0, 0], position: [0, 0], scale: planeCam(DEPTH.back)}, label: 2},
       {kind: 'precomp', name: 'WORLD BACK', comp: 'WORLD BACK', collapse: true, parent: 'CAMERA BACK', transform: {anchor: [0, 0], position: camPos}, label: 16},
-      {kind: 'null', name: 'CAMERA SHADOWS', transform: {anchor: [0, 0], position: [W / 2, H / 2], scale: planeCam(DEPTH.shadows)}, label: 2},
+      {kind: 'null', name: 'CAMERA SHADOWS', parent: 'CAMERA RIG', transform: {anchor: [0, 0], position: [0, 0], scale: planeCam(DEPTH.shadows)}, label: 2},
       {kind: 'precomp', name: 'WORLD SHADOWS', comp: 'WORLD SHADOWS', collapse: true, parent: 'CAMERA SHADOWS', transform: {anchor: [0, 0], position: camPos}, label: 16},
-      {kind: 'null', name: 'CAMERA', transform: {anchor: [0, 0], position: [W / 2, H / 2], scale: camScale}, label: 2},
+      {kind: 'null', name: 'CAMERA', parent: 'CAMERA RIG', transform: {anchor: [0, 0], position: [0, 0], scale: camScale}, label: 2},
       {kind: 'precomp', name: 'WORLD', comp: 'WORLD', collapse: true, parent: 'CAMERA', transform: {anchor: [0, 0], position: camPos}, label: 10},
       ...SLIDES.map(slideLayer),
       ...mastheadLayers(),
@@ -989,19 +1129,27 @@ export function buildEditorialScene(): Scene {
  * How far things move on screen during one shutter interval at frame t (px). The renderer uses it to
  * pick the number of motion-blur samples per frame (AE picks its own).
  */
-export function motionAmount(t: number): number {
-  const half = 0.25; // 180 deg shutter = half a frame, centred on the frame
-  const z = (tt: number) => evalVec2(camScale, tt, [100, 100])[0] / 100;
-  const c = (tt: number) => evalVec2(camPos, tt, [0, 0]); // = -centre
-  const screen = (tt: number, p: Vec2): Vec2 => [W / 2 + z(tt) * (p[0] + c(tt)[0]), H / 2 + z(tt) * (p[1] + c(tt)[1])];
-  const world = (tt: number, s: Vec2): Vec2 => [(s[0] - W / 2) / z(tt) - c(tt)[0], (s[1] - H / 2) / z(tt) - c(tt)[1]];
-  const dist = (a: Vec2, b: Vec2) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+const SHUTTER_HALF = 0.25; // 180 deg shutter = half a frame, centred on the frame
+const dist = (a: Vec2, b: Vec2) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+/** How far the page under the screen corners moves during the shutter at frame t (px). */
+function cameraMotion(t: number): number {
+  const screenToWorld = (tt: number, sc: Vec2): Vec2 => {
+    const {z, c, r} = rigAt(tt);
+    const x = sc[0] - W / 2;
+    const y = sc[1] - H / 2;
+    return [(Math.cos(r) * x + Math.sin(r) * y) / z - c[0], (-Math.sin(r) * x + Math.cos(r) * y) / z - c[1]];
+  };
   let m = 0;
-  // what is under the screen corners now, and where it is at the start / end of the shutter
-  for (const s of [[0, 0], [W, 0], [0, H], [W, H]] as Vec2[]) {
-    const p = world(t, s);
-    m = Math.max(m, dist(screen(t - half, p), screen(t + half, p)));
+  for (const sc of [[0, 0], [W, 0], [0, H], [W, H]] as Vec2[]) {
+    const p = screenToWorld(t, sc);
+    m = Math.max(m, dist(worldToScreen(t - SHUTTER_HALF, p), worldToScreen(t + SHUTTER_HALF, p)));
   }
+  return m;
+}
+export function motionAmount(t: number): number {
+  const half = SHUTTER_HALF;
+  const z = (tt: number) => rigAt(tt).z;
+  let m = cameraMotion(t);
   for (const [, tIn, tOut] of SLIDES) {
     const k = slideKeys(tIn, tOut);
     m = Math.max(m, dist(evalVec2(k, t - half, [0, 0]), evalVec2(k, t + half, [0, 0])));
@@ -1022,6 +1170,12 @@ export function blurSamples(): number[] {
 /** Poster frame for the website: the whole wall, all 12 live, counter at 360. */
 export const posterFrame = () => f(S.oneCampaign + 0.4);
 
+/** Time (s) where the camera moves fastest on screen between t0 and t1 (s). */
+function peakMotion(t0: number, t1: number): number {
+  let best = f(t0);
+  for (let fr = f(t0); fr <= f(t1); fr++) if (cameraMotion(fr) > cameraMotion(best)) best = fr;
+  return best / FPS;
+}
 /** Time (s) of the fastest point of an eased move. */
 function fastest(e: Bezier, t0: number, t1: number): number {
   let best = 0;
@@ -1038,7 +1192,7 @@ const whoosh = (t: number, gainDb: number) => ({file: 'whoosh.wav', t: t - WHOOS
 /** SFX cue list for the mix (seconds), derived from the same timeline. */
 export function sfxCues(): Array<{file: string; t: number; gainDb: number}> {
   const cam = (t: number) => CAMERA.findIndex((k) => k.t === t);
-  const move = (t: number) => fastest(CAMERA[cam(t)].e!, t, CAMERA[cam(t) + 1].t);
+  const move = (t: number) => peakMotion(t, CAMERA[cam(t) + 1].t);
   return [
     {file: 'type_fast.wav', t: S.typeStart, gainDb: -20},
     whoosh(fastest([0.55, 0, 0.1, 1], S.brk, S.brk + SLICE_DUR), -32),

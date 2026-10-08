@@ -76,12 +76,15 @@ CO JEST W ŚRODKU
 - Wszystko jest natywne i edytowalne: warstwy kształtów, teksty, klatki kluczowe.
 - Kamera: null "CAMERA" (skala = zbliżenie) i prekompozycja "WORLD" (pozycja = kadr).
   Cała strona (brief, kafle, pasek z licznikiem, plansza końcowa) leży w "WORLD".
-  Głębia (2.5D): za stroną leżą jeszcze dwie płaszczyzny, każda z własnym nullem:
+  Głębia (2.5D): za stroną leżą jeszcze cztery płaszczyzny, każda z własnym nullem:
+  "CAMERA FAR" + "WORLD FAR" i "CAMERA MID" + "WORLD MID" (duże koła, półkola i łuki w tle, same dryfują i się obracają),
   "CAMERA BACK" + "WORLD BACK" (linie siatki) i "CAMERA SHADOWS" + "WORLD SHADOWS" (cienie kafli).
+  Wszystkie nulle CAMERA są dziećmi nulla "CAMERA RIG": jego Rotation to lekkie przechylenie kamery (maks. 1°) na ruchach w bok.
   Ich Scale to zbliżenie przeliczone na głębokość (dalsza płaszczyzna rośnie wolniej),
   dlatego przy najazdach warstwy się rozjeżdżają.
-  Ruch kamery zmieniasz tak: Scale na trzech nullach CAMERA i Position na trzech prekompozycjach WORLD
-  (te same czasy kluczy). Wzór na skalę płaszczyzn jest w film.ts (planeScale).
+  Ruch kamery zmieniasz tak: Scale na nullach CAMERA i Position na prekompozycjach WORLD (te same czasy kluczy).
+  Kamera płynie: klucze mają prędkość (influence 33%), więc nie zatrzymuje się na każdym kluczu.
+  Wzór na skalę płaszczyzn jest w film.ts (planeScale), płynność liczy flowEases.
 - Cienie (bez efektów, same kształty, więc wyglądają identycznie jak w MP4 i skalują się z kamerą):
   pod każdym gotowym kaflem "NN NAZWA shadow" (miękki cień) i "NN NAZWA contact" (ciemna krawędź przy stronie)
   w "WORLD SHADOWS". Kafel to karta: warstwa "... | card" w prekompozycji kafla zasłania jego własny cień.
@@ -132,12 +135,15 @@ WHAT IS INSIDE
 - Everything is native and editable: shape layers, text, keyframes.
 - Camera: null "CAMERA" (scale = zoom) and the precomp "WORLD" (position = framing).
   The whole page (brief, tiles, counter band, final card) lives in "WORLD".
-  Depth (2.5D): two more planes sit behind the page, each with its own null:
+  Depth (2.5D): four more planes sit behind the page, each with its own null:
+  "CAMERA FAR" + "WORLD FAR" and "CAMERA MID" + "WORLD MID" (big rings, half-discs and arcs that drift and turn),
   "CAMERA BACK" + "WORLD BACK" (the grid lines) and "CAMERA SHADOWS" + "WORLD SHADOWS" (the tile shadows).
+  All the CAMERA nulls are children of the "CAMERA RIG" null: its Rotation is the gentle bank (max 1 deg) on sideways moves.
   Their Scale is the zoom converted to their depth (a farther plane grows more slowly),
   so the layers separate during the push-ins.
-  To change the camera move: Scale on the three CAMERA nulls and Position on the three WORLD precomps
-  (same key times). The plane scale formula is in film.ts (planeScale).
+  To change the camera move: Scale on the CAMERA nulls and Position on the WORLD precomps (same key times).
+  The camera flows: the keys carry speed (33% influence), so it does not stop at every key.
+  The plane scale formula is in film.ts (planeScale); the flow is computed by flowEases.
 - Shadows (no effects, plain shapes, so they look exactly like the MP4 and scale with the camera):
   under every live tile "NN NAME shadow" (the soft shadow) and "NN NAME contact" (the dark edge at the page)
   in "WORLD SHADOWS". A tile is a card: the "... | card" layer in the tile precomp hides its own shadow.
