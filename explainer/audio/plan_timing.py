@@ -12,7 +12,8 @@ config.json: {
   "offset": 2.2, "beat": 0.5, "bar": 2.0, "lead": 0.04, "keep": 0.06,
   "gaps": [...one per chunk boundary...],
   "hits": [{"deg": 90, "word": "shoot", "syl": 0, "gap": null, "min": 0, "max": 0}, ...],
-  "music": {"big_entry": 24.0, "ending": 42.0, "tail": 6.0, "ending_bars": 1, "button_bars": [5, 4, 6], "latest_button": 38.2}
+  "music": {"big_entry": 24.0, "ending": 42.0, "tail": 6.0, "ending_bars": 1, "button_bars": [5, 4, 6], "latest_button": 38.2,
+            "intro_loop": {"from": 6.0, "to": 16.0, "start_max": 3.0}}
 }
 Writes out_dir/gaps.json, out_dir/plan.json
 """
@@ -70,6 +71,13 @@ def main(align_path, cfg_path, out_dir):
     m = cfg["music"]
     music_film_start = max(0.0, last - m["big_entry"])  # music may start after film 0 (quiet typing intro)
     src_start = max(0.0, m["big_entry"] - last)
+    # a long film: repeat whole bars of the intro (ending at intro_loop.to) so the music still starts by start_max
+    loop = m.get("intro_loop")
+    extra = 0.0
+    if loop and music_film_start > loop["start_max"]:
+        bars = -(-(music_film_start - loop["start_max"]) // bar)
+        extra = min(bars * bar, loop["to"] - loop.get("from", 0.0))
+        music_film_start -= extra
     button = None
     for bars in m["button_bars"]:
         b = last + bars * bar
@@ -87,8 +95,12 @@ def main(align_path, cfg_path, out_dir):
         "hits": hits,
         "music": {
             # the last `ending_bars` bars before the source's stop play in full, so the stop lands on the button
-            "segments": [
+            "segments": ([
+                {"src_start": round(src_start, 3), "src_end": loop["to"], "film_start": round(music_film_start, 3)},
+                {"src_start": round(loop["to"] - extra, 3), "src_end": round(m["big_entry"] + (button - last) - pre, 3), "film_start": round(music_film_start + loop["to"] - src_start, 3)},
+            ] if extra else [
                 {"src_start": round(src_start, 3), "src_end": round(m["big_entry"] + (button - last) - pre, 3), "film_start": round(music_film_start, 3)},
+            ]) + [
                 {"src_start": m["ending"] - pre, "src_end": m["ending"] + m["tail"], "film_start": round(button - pre, 3)},
             ],
             "button": round(button, 3),

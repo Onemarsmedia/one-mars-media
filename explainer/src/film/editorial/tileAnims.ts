@@ -33,6 +33,8 @@ export type TileAnim =
   /** a timecode text counts frames */
   | {kind: 'timecode'; text: number; rate: number};
 
+// v4: CONCEPT and STORYBOARD now have ~1.5 s alone on screen (was ~0.5 s), so their one-shot
+// animations run at a calmer pace than the art director's v3 timings quoted in the notes below.
 export const TILE_ANIMS: Record<string, TileAnim[]> = {
   // CONCEPT: The key line 'Make it land.' types onto the red highlight of the brief while the moodboard swatch is
   // quickly pencil-hatched. Both finish before the camera pushes away (~0.75 s). After that, the red disc of the
@@ -44,20 +46,20 @@ export const TILE_ANIMS: Record<string, TileAnim[]> = {
     // for only ~0.75 s after landing (10.61-11.35), because the camera starts its push into FILMING at 11.2 s, so
     // the line has to be done by ~0.7 s. At 30 cps the 13 chars run 0.25-0.65 s. The panel wipe uncovers this row (y
     // ~150-168) at ~0.15 s. It plays in the active look, where the bar is red on red but the ink text still reads.
-    {kind: 'type', text: 5, delay: 0.25, cps: 30},
+    {kind: 'type', text: 5, delay: 0.35, cps: 18},
     // Secondary, plays once. The 15 diagonal hatch lines of the moodboard swatch (stroke-only ink w1.41, each
     // running bottom-left to top-right) draw in painter's order, from the top-left fragment 18 to the bottom-right
     // 32, like a pencil hatching a texture. AD: tightened from 0.5-1.24 s to 0.3-0.78 s so it finishes while the
     // tile is still in frame. The wipe has passed the swatch (y 190-238) by ~0.3 s. Swatch bg 17 and frame 33 stay
     // static.
-    {kind: 'draw', items: [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32], delay: 0.3, dur: 0.2, stagger: 0.02},
+    {kind: 'draw', items: [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32], delay: 0.5, dur: 0.25, stagger: 0.04},
     // Wall loop. The red KV disc of the moodboard thumbnail (circle 12, under the ink ground 13) rises and settles
     // behind its horizon by +/-1.5 px. Its top stays at >= 78.8, inside thumbnail 11 / frame 14 (71.5). AD: amp 2 ->
     // 3, and delay 1.89 so its keys fall on the same frames as the four DISTRIBUTION discs (amp 3, period 3; top at
     // 27.5, bottom at 29.0, top at 30.5 s). On the full wall the brief's key visual and every format then breathe
     // together. delay = (26.08 + 1.42) - 10.61 - 5 x 3.0; recompute it if the landing times move. The first leg (0
     // to -1.5 px over 1.89 s) is just slower than the rest.
-    {kind: 'bob', items: [12], delay: 1.89, period: 3, amp: 3},
+    {kind: 'bob', items: [12], delay: 2.92, period: 3, amp: 3},
   ],
   // STORYBOARD: The four red push-in arrows of panel 02 are sketched in, one corner after another, in the half
   // second the board is in frame. On the full wall, the presenter in that panel gives a small push-in nudge toward
@@ -68,13 +70,13 @@ export const TILE_ANIMS: Record<string, TileAnim[]> = {
     // move. AD: it was 0.4-1.0 s, but STORYBOARD lands as the camera starts its push into FILMING. Panel 02 is fully
     // in frame for only ~0.45 s and leaves at ~0.6 s, so the draw now runs 0.12-0.51 s. The wipe uncovers panel 02
     // (y 66-132) by ~0.1 s. The arrows sit on paper panel 11, so they also read in the red active look.
-    {kind: 'draw', items: [14, 15, 16, 17, 18, 19, 20, 21], delay: 0.12, dur: 0.18, stagger: 0.03},
+    {kind: 'draw', items: [14, 15, 16, 17, 18, 19, 20, 21], delay: 0.3, dur: 0.25, stagger: 0.06},
     // Wall loop. The presenter's head 12 and shoulders 13 swell to 104 % from the bottom-centre of the panel, so the
     // shoulders stay on its bottom edge (y 132.1) and the head rises ~2 px: the push-in, previewed. It stays inside
     // panel 02 (x 183.6-242.2, top 80.1 vs 65.9) and clear of the corner arrows. AD: the tile is not in frame again
     // until the wall, so period 2.4 -> 2.2 and delay 1.0 -> 2.13 put its peaks at 28.9 and 31.1 s. That keeps it
     // away from FILMING's focus pulse right next to it (29.67 s) and from the other wall pulses.
-    {kind: 'pulse', items: [12, 13], delay: 2.13, period: 2.2, scale: 104, pivot: [212.9, 132.1]},
+    {kind: 'pulse', items: [12, 13], delay: 1.2, period: 2.2, scale: 104, pivot: [212.9, 132.1]},
   ],
   // FILMING: A live viewfinder. REC blinks and the timecode runs (both kept), the red focus box breathes like
   // autofocus locking onto the face, and the CH1/CH2 levels peak out of step. It reads as 'we're rolling' at 320 %

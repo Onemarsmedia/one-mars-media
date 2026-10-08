@@ -9,7 +9,7 @@ import typeOnsets from './timing/type_onsets.json';
 import vo from './timing/vo.json';
 import {BAND_Y, BASE, BIG, C, colX, COLW, DEG_SIZE, FONT, FPS, GRID_Y0, H, L1, L2, M, ROW_GAP, RUL_H, RUL_Y, W} from './tokens';
 
-// "One brief -> the whole campaign", Editorial direction, v3 ("flowing"). 42 s, 1920x1080, 60 fps.
+// "One brief -> the whole campaign", Editorial direction, v4. ~54 s, 1920x1080, 60 fps.
 // The whole page (brief, grid, band, end card) lives in one WORLD precomp that a single camera
 // (null "CAMERA") flies over without a cut: slow drifts between eased moves, pushes into the two
 // hero tiles on the counter hits, one pull-back to the full wall. Only the masthead and the two
@@ -17,7 +17,6 @@ import {BAND_Y, BASE, BIG, C, colX, COLW, DEG_SIZE, FONT, FPS, GRID_Y0, H, L1, L
 // Every event comes from the edited voice-over (timing/vo.json) and the beat plan (timing/plan.json:
 // counter hits on the music grid, the music button after "No limits").
 
-export const DURATION = 42 * FPS;
 const f = (sec: number) => Math.round(sec * FPS);
 
 // eases (CSS cubic-bezier; converted exactly to AE speed/influence)
@@ -40,7 +39,11 @@ function word(text: string, nth = 0): Word {
 }
 const LEAD = 0.03; // picture leads the sound by ~2 frames
 const at = (w: Word) => w.start - LEAD;
-const HIT = {90: plan.hits['90'], 180: plan.hits['180'], 270: plan.hits['270'], 360: plan.hits['360']};
+// every tile lands on a beat of the music grid, ~1.5 s apart (timing/plan.json: hits per 30 deg)
+const hit = (deg: number) => (plan.hits as Record<string, number>)[String(deg)];
+const HIT = {90: hit(90), 180: hit(180), 270: hit(270), 360: hit(360)};
+const HERO_HOLD = 1.9; // s a hero tile stays in close-up
+const ROW_HOLD = 1.6; // s the camera stays on a row after its third tile lands
 
 /** Event times in seconds. */
 export const S = {
@@ -48,41 +51,41 @@ export const S = {
   video: at(word('video')),
   every: at(word('every')),
   brk: at(word('one', 0)), // "...and ONE team": the brief breaks into the 12 slots
-  // tiles 3, 6, 9 and 12 land on the counter hits (on the music grid); the others on their verbs
-  tileOn: [
-    at(word('think')),
-    at(word('sketch')),
-    HIT[90],
-    at(word('cut')),
-    at(word('move')),
-    HIT[180],
-    at(word('podcast')),
-    at(word('post')),
-    HIT[270],
-    at(word('code')),
-    at(word('version')),
-    HIT[360],
-  ],
+  tileOn: [30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360].map(hit),
   halfway: at(word('halfway')),
-  wall: 28.6, // the pull-back lands on the full wall
+  nowTake: at(word('now')),
+  wall: HIT[360] + HERO_HOLD + 1.6, // the pull-back lands on the full wall
   oneCampaign: at(word('campaign')),
-  endOut: 31.75, // tiles, ruler and status give way to the sign-off
+  endOut: word('roof').end + 0.2, // tiles, ruler and status give way to the sign-off
   name: at(word('onemarsmedia')),
   nameEnd: word('onemarsmedia').end,
   oneTeam: at(word('one', 3)),
   noLimits: at(word('no')),
-  lift: 37.1, // after the voice: the sign-off and contents give way to the final card
-  button: plan.music.button, // the music's last hit: the credits land
+  button: plan.music.button, // the music's last hit (its stop): the credits land
+  lift: plan.music.button - 1.25, // the sign-off and contents give way to the final card
 };
 const ON = S.tileOn.map(f);
 // tile i is "active" (red) until the next tile lands; the last one until the wall.
 // FILMING is the exception: its hero shows the dark viewfinder look from the approved frame (f2).
 const ACTIVE_OFF = ON.map((t, i) => (i === 2 ? t : i < 11 ? ON[i + 1] : f(S.wall)));
 export const T = {tileOn: ON, brk: f(S.brk), endOut: f(S.endOut), button: f(S.button)};
+export const DURATION = Math.ceil(S.button + 3.6) * FPS;
 
 // ------------------------------------------------------------------ camera
 // c = world point at the centre of the screen, z = zoom (%). WORLD position = -c, CAMERA scale = z.
+// Each row is held until its third tile has been on screen for ROW_HOLD; heroes for HERO_HOLD.
 type Cam = {t: number; c: Vec2; z: number; e?: Bezier};
+const [, , T90, , , T180, , , T270, T300, , T360] = S.tileOn;
+const MOVES = {
+  filmingPush: T90 - 0.88,
+  row1Right: T90 + HERO_HOLD,
+  counter: T180 + ROW_HOLD,
+  row2Left: S.nowTake - 0.3,
+  row2Right: T270 + ROW_HOLD - 0.2,
+  distributionPush: T360 - 0.98,
+  pullBack: T360 + HERO_HOLD,
+  endCard: S.endOut + 0.05,
+};
 const CAMERA: Cam[] = [
   {t: 0, c: [960, 540], z: 100, e: SOFT}, // slow push while the brief is typed (headline and memo stay in frame)
   {t: 3.4, c: [955, 532], z: 101.5, e: SOFT},
@@ -90,23 +93,23 @@ const CAMERA: Cam[] = [
   {t: 7.2, c: [960, 540], z: 100, e: SOFT}, // out to the page as the brief breaks into the grid
   {t: 8.6, c: [960, 540], z: 101.5, e: MOVE},
   {t: 9.8, c: [540, 300], z: 172, e: SOFT}, // "It starts with the idea": row 1, left
-  {t: 11.2, c: [595, 290], z: 175.5, e: PUSH},
-  {t: S.tileOn[2], c: [948, 233.5], z: 320, e: SOFT}, // 090: FILMING hero (tile at the left margin, as f2)
-  {t: 13.2, c: [952, 236], z: 326, e: MOVE},
-  {t: 14.3, c: [1310, 300], z: 172, e: SOFT}, // "Then we shape it": row 1, right
-  {t: 16.3, c: [1370, 290], z: 176, e: MOVE},
-  {t: 17.1, c: [1452, 868], z: 205, e: SOFT}, // "That's halfway": the counter (row 2 kept clear of the masthead)
-  {t: 17.9, c: [1452, 868], z: 210, e: MOVE},
-  {t: 19.0, c: [640, 674], z: 150, e: SOFT}, // "Now take it everywhere": row 2 with the status line and the ruler
-  {t: 22.2, c: [690, 672], z: 153, e: MOVE},
-  {t: 23.0, c: [1250, 674], z: 150, e: SOFT}, // row 2, right, with the whole counter
-  {t: 25.1, c: [1290, 672], z: 153, e: PUSH},
-  {t: S.tileOn[11], c: [1854, 511], z: 320, e: SOFT}, // 360: DISTRIBUTION hero
-  {t: 27.0, c: [1854, 511], z: 326, e: MOVE},
+  {t: MOVES.filmingPush, c: [595, 290], z: 175.5, e: PUSH},
+  {t: T90, c: [948, 233.5], z: 320, e: SOFT}, // 090: FILMING hero (tile at the left margin, as f2)
+  {t: MOVES.row1Right, c: [952, 236], z: 326, e: MOVE},
+  {t: MOVES.row1Right + 1.1, c: [1310, 300], z: 172, e: SOFT}, // "Then we shape it": row 1, right
+  {t: MOVES.counter, c: [1370, 290], z: 176, e: MOVE},
+  {t: MOVES.counter + 0.8, c: [1452, 868], z: 205, e: SOFT}, // "That's halfway": the counter (row 2 kept clear of the masthead)
+  {t: MOVES.row2Left, c: [1452, 868], z: 210, e: MOVE},
+  {t: MOVES.row2Left + 1.1, c: [640, 674], z: 150, e: SOFT}, // "Now take it everywhere": row 2 with the status line and the ruler
+  {t: MOVES.row2Right, c: [690, 672], z: 153, e: MOVE},
+  {t: Math.min(MOVES.row2Right + 0.8, T300 - 0.15), c: [1250, 674], z: 150, e: SOFT}, // row 2, right, with the whole counter
+  {t: MOVES.distributionPush, c: [1290, 672], z: 153, e: PUSH},
+  {t: T360, c: [1854, 511], z: 320, e: SOFT}, // 360: DISTRIBUTION hero
+  {t: MOVES.pullBack, c: [1854, 511], z: 326, e: MOVE},
   {t: S.wall, c: [960, 540], z: 100, e: SOFT}, // "That's three-sixty": the whole wall
-  {t: 31.8, c: [960, 540], z: 101.5, e: MOVE},
-  {t: 32.6, c: [960, 540], z: 100}, // the sign-off and the final card: the camera rests, page and masthead share the margins
-  {t: 42, c: [960, 540], z: 100},
+  {t: MOVES.endCard, c: [960, 540], z: 101.5, e: MOVE},
+  {t: MOVES.endCard + 0.8, c: [960, 540], z: 100}, // the sign-off and the final card: the camera rests, page and masthead share the margins
+  {t: DURATION / FPS, c: [960, 540], z: 100},
 ];
 const camPos: Prop<Vec2> = {keys: CAMERA.map((k) => key(f(k.t), [-k.c[0], -k.c[1]] as Vec2, k.e))};
 const camScale: Prop<Vec2> = {keys: CAMERA.map((k) => key(f(k.t), [k.z, k.z] as Vec2, k.e))};
@@ -473,8 +476,8 @@ function indexComp(name: string, current: number): Comp {
 
 /** The contents columns slide in from the right edge and back out (seconds). */
 const SLIDES: Array<[string, number, number]> = [
-  ['INDEX 03 FILMING', S.tileOn[2] - 0.4, 13.2],
-  ['INDEX 12 DISTRIBUTION', S.tileOn[11] - 0.4, 27.6],
+  ['INDEX 03 FILMING', T90 - 0.4, MOVES.row1Right],
+  ['INDEX 12 DISTRIBUTION', T360 - 0.4, MOVES.pullBack + 0.6],
 ];
 function slideKeys(tIn: number, tOut: number): Prop<Vec2> {
   const off: Vec2 = [W - 1200 + 40, 0];
@@ -800,7 +803,7 @@ export function blurSamples(): number[] {
 }
 
 /** Poster frame for the website: the whole wall, all 12 live, counter at 360. */
-export const posterFrame = () => f(30.05);
+export const posterFrame = () => f(S.oneCampaign + 0.4);
 
 /** Time (s) of the fastest point of an eased move. */
 function fastest(e: Bezier, t0: number, t1: number): number {
@@ -824,10 +827,10 @@ export function sfxCues(): Array<{file: string; t: number; gainDb: number}> {
     whoosh(fastest([0.55, 0, 0.1, 1], S.brk, S.brk + SLICE_DUR), -32),
     ...S.tileOn.map((t) => ({file: 'tap.wav', t, gainDb: -27})),
     {file: 'flap.wav', t: HIT[90], gainDb: -27}, // the 180 and 270 steps happen off screen: no flap there
-    whoosh(move(11.2), -31),
-    whoosh(move(25.1), -31),
+    whoosh(move(MOVES.filmingPush), -31),
+    whoosh(move(MOVES.distributionPush), -31),
     {file: 'lock.wav', t: HIT[360], gainDb: -20},
-    whoosh(move(27.0), -30),
+    whoosh(move(MOVES.pullBack), -30),
     whoosh(fastest(MOVE, S.lift + 0.15, S.button), -33),
     {file: 'tap.wav', t: S.oneTeam, gainDb: -28},
     {file: 'tap.wav', t: S.noLimits, gainDb: -28},

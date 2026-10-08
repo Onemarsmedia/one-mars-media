@@ -1,6 +1,6 @@
 {
  "offset": 2.3,
- "vo_duration": 34.06,
+ "vo_duration": 45.2,
  "chunks": [
   {
    "text": "Then you need more than a video",
@@ -29,134 +29,134 @@
   {
    "text": "Think it",
    "punct": ",",
-   "start": 10.64,
-   "end": 11.04
+   "start": 10.79,
+   "end": 11.19
   },
   {
    "text": "sketch it",
    "punct": ",",
-   "start": 11.22,
-   "end": 11.77
+   "start": 12.13,
+   "end": 12.68
   },
   {
    "text": "shoot it",
    "punct": ".",
-   "start": 11.95,
-   "end": 12.44
+   "start": 13.69,
+   "end": 14.18
   },
   {
    "text": "Then we shape it",
    "punct": ".",
-   "start": 13.47,
-   "end": 14.22
+   "start": 15.98,
+   "end": 16.73
   },
   {
    "text": "Cut it",
    "punct": ",",
-   "start": 14.62,
-   "end": 15.03
+   "start": 17.26,
+   "end": 17.67
   },
   {
    "text": "move it",
    "punct": ",",
-   "start": 15.21,
-   "end": 15.68
+   "start": 18.69,
+   "end": 19.16
   },
   {
    "text": "design it",
    "punct": ".",
-   "start": 15.86,
-   "end": 16.38
+   "start": 20.1,
+   "end": 20.62
   },
   {
    "text": "That's halfway",
    "punct": ".",
-   "start": 16.93,
-   "end": 17.63
+   "start": 22.22,
+   "end": 22.92
   },
   {
    "text": "Now take it everywhere",
    "punct": ".",
-   "start": 18.41,
-   "end": 19.72
+   "start": 23.92,
+   "end": 25.23
   },
   {
    "text": "Podcast it",
    "punct": ",",
-   "start": 20.12,
-   "end": 20.79
+   "start": 25.748,
+   "end": 26.418
   },
   {
    "text": "post it",
    "punct": ",",
-   "start": 20.97,
-   "end": 21.42
+   "start": 27.25,
+   "end": 27.7
   },
   {
    "text": "build the site",
    "punct": ".",
-   "start": 21.6,
-   "end": 22.24
+   "start": 28.84,
+   "end": 29.48
   },
   {
    "text": "Code the app",
    "punct": ",",
-   "start": 22.82,
-   "end": 23.5
+   "start": 31.73,
+   "end": 32.41
   },
   {
    "text": "version it with AI",
    "punct": ",",
-   "start": 23.68,
-   "end": 24.9
+   "start": 33.258,
+   "end": 34.478
   },
   {
    "text": "ship it everywhere",
    "punct": ".",
-   "start": 25.08,
-   "end": 26.25
+   "start": 35.32,
+   "end": 36.49
   },
   {
    "text": "That's three-sixty",
    "punct": ".",
-   "start": 27.25,
-   "end": 28.2
+   "start": 38.39,
+   "end": 39.34
   },
   {
    "text": "One brief",
    "punct": ",",
-   "start": 28.65,
-   "end": 29.32
+   "start": 39.79,
+   "end": 40.46
   },
   {
    "text": "the whole campaign",
    "punct": ",",
-   "start": 29.5,
-   "end": 30.48
+   "start": 40.64,
+   "end": 41.62
   },
   {
    "text": "under one roof",
    "punct": ".",
-   "start": 30.66,
-   "end": 31.54
+   "start": 41.8,
+   "end": 42.68
   },
   {
    "text": "Onemarsmedia",
    "punct": ".",
-   "start": 33.24,
-   "end": 34.23
+   "start": 44.38,
+   "end": 45.37
   },
   {
    "text": "One team",
    "punct": ".",
-   "start": 34.58,
-   "end": 35.19
+   "start": 45.72,
+   "end": 46.33
   },
   {
    "text": "No limits",
    "punct": ".",
-   "start": 35.47,
-   "end": 36.3
+   "start": 46.61,
+   "end": 47.44
   }
  ],
  "words": [
@@ -398,558 +398,558 @@
   },
   {
    "text": "Think",
-   "start": 10.64,
-   "end": 10.825,
+   "start": 10.79,
+   "end": 10.975,
    "syllables": [
-    10.71
+    10.86
    ],
    "chunk": 4,
    "snapped": true
   },
   {
    "text": "it",
-   "start": 10.825,
-   "end": 11.04,
+   "start": 10.975,
+   "end": 11.19,
    "syllables": [
-    10.94
+    11.09
    ],
    "chunk": 4,
    "snapped": true
   },
   {
    "text": "sketch",
-   "start": 11.22,
-   "end": 11.565,
+   "start": 12.13,
+   "end": 12.475,
    "syllables": [
-    11.45
+    12.36
    ],
    "chunk": 5,
    "snapped": true
   },
   {
    "text": "it",
-   "start": 11.565,
-   "end": 11.77,
+   "start": 12.475,
+   "end": 12.68,
    "syllables": [
-    11.68
+    12.59
    ],
    "chunk": 5,
    "snapped": true
   },
   {
    "text": "shoot",
-   "start": 11.95,
-   "end": 12.26,
+   "start": 13.69,
+   "end": 14.0,
    "syllables": [
-    12.12
+    13.86
    ],
    "chunk": 6,
    "snapped": true
   },
   {
    "text": "it",
-   "start": 12.26,
-   "end": 12.44,
+   "start": 14.0,
+   "end": 14.18,
    "syllables": [
-    12.4
+    14.14
    ],
    "chunk": 6,
    "snapped": true
   },
   {
    "text": "Then",
-   "start": 13.47,
-   "end": 13.657,
+   "start": 15.98,
+   "end": 16.167,
    "syllables": [
-    13.564
+    16.074
    ],
    "chunk": 7,
    "snapped": false
   },
   {
    "text": "we",
-   "start": 13.657,
-   "end": 13.845,
+   "start": 16.167,
+   "end": 16.355,
    "syllables": [
-    13.751
+    16.261
    ],
    "chunk": 7,
    "snapped": false
   },
   {
    "text": "shape",
-   "start": 13.845,
-   "end": 14.032,
+   "start": 16.355,
+   "end": 16.542,
    "syllables": [
-    13.939
+    16.449
    ],
    "chunk": 7,
    "snapped": false
   },
   {
    "text": "it",
-   "start": 14.032,
-   "end": 14.22,
+   "start": 16.542,
+   "end": 16.73,
    "syllables": [
-    14.126
+    16.636
    ],
    "chunk": 7,
    "snapped": false
   },
   {
    "text": "Cut",
-   "start": 14.62,
-   "end": 14.82,
+   "start": 17.26,
+   "end": 17.46,
    "syllables": [
-    14.72
+    17.36
    ],
    "chunk": 8,
    "snapped": true
   },
   {
    "text": "it",
-   "start": 14.82,
-   "end": 15.03,
+   "start": 17.46,
+   "end": 17.67,
    "syllables": [
-    14.92
+    17.56
    ],
    "chunk": 8,
    "snapped": true
   },
   {
    "text": "move",
-   "start": 15.21,
-   "end": 15.475,
+   "start": 18.69,
+   "end": 18.955,
    "syllables": [
-    15.38
+    18.86
    ],
    "chunk": 9,
    "snapped": true
   },
   {
    "text": "it",
-   "start": 15.475,
-   "end": 15.68,
+   "start": 18.955,
+   "end": 19.16,
    "syllables": [
-    15.57
+    19.05
    ],
    "chunk": 9,
    "snapped": true
   },
   {
    "text": "design",
-   "start": 15.86,
-   "end": 16.207,
+   "start": 20.1,
+   "end": 20.447,
    "syllables": [
-    15.947,
-    16.12
+    20.187,
+    20.36
    ],
    "chunk": 10,
    "snapped": false
   },
   {
    "text": "it",
-   "start": 16.207,
-   "end": 16.38,
+   "start": 20.447,
+   "end": 20.62,
    "syllables": [
-    16.293
+    20.533
    ],
    "chunk": 10,
    "snapped": false
   },
   {
    "text": "That's",
-   "start": 16.93,
-   "end": 17.095,
+   "start": 22.22,
+   "end": 22.385,
    "syllables": [
-    16.97
+    22.26
    ],
    "chunk": 11,
    "snapped": true
   },
   {
    "text": "halfway",
-   "start": 17.095,
-   "end": 17.63,
+   "start": 22.385,
+   "end": 22.92,
    "syllables": [
-    17.22,
-    17.45
+    22.51,
+    22.74
    ],
    "chunk": 11,
    "snapped": true
   },
   {
    "text": "Now",
-   "start": 18.41,
-   "end": 18.628,
+   "start": 23.92,
+   "end": 24.138,
    "syllables": [
-    18.519
+    24.029
    ],
    "chunk": 12,
    "snapped": false
   },
   {
    "text": "take",
-   "start": 18.628,
-   "end": 18.847,
+   "start": 24.138,
+   "end": 24.357,
    "syllables": [
-    18.738
+    24.248
    ],
    "chunk": 12,
    "snapped": false
   },
   {
    "text": "it",
-   "start": 18.847,
-   "end": 19.065,
+   "start": 24.357,
+   "end": 24.575,
    "syllables": [
-    18.956
+    24.466
    ],
    "chunk": 12,
    "snapped": false
   },
   {
    "text": "everywhere",
-   "start": 19.065,
-   "end": 19.72,
+   "start": 24.575,
+   "end": 25.23,
    "syllables": [
-    19.174,
-    19.393,
-    19.611
+    24.684,
+    24.903,
+    25.121
    ],
    "chunk": 12,
    "snapped": false
   },
   {
    "text": "Podcast",
-   "start": 20.12,
-   "end": 20.567,
+   "start": 25.748,
+   "end": 26.195,
    "syllables": [
-    20.232,
-    20.455
+    25.86,
+    26.083
    ],
    "chunk": 13,
    "snapped": false
   },
   {
    "text": "it",
-   "start": 20.567,
-   "end": 20.79,
+   "start": 26.195,
+   "end": 26.418,
    "syllables": [
-    20.678
+    26.306
    ],
    "chunk": 13,
    "snapped": false
   },
   {
    "text": "post",
-   "start": 20.97,
-   "end": 21.22,
+   "start": 27.25,
+   "end": 27.5,
    "syllables": [
-    21.08
+    27.36
    ],
    "chunk": 14,
    "snapped": true
   },
   {
    "text": "it",
-   "start": 21.22,
-   "end": 21.42,
+   "start": 27.5,
+   "end": 27.7,
    "syllables": [
-    21.36
+    27.64
    ],
    "chunk": 14,
    "snapped": true
   },
   {
    "text": "build",
-   "start": 21.6,
-   "end": 21.76,
+   "start": 28.84,
+   "end": 29.0,
    "syllables": [
-    21.66
+    28.9
    ],
    "chunk": 15,
    "snapped": true
   },
   {
    "text": "the",
-   "start": 21.76,
-   "end": 21.99,
+   "start": 29.0,
+   "end": 29.23,
    "syllables": [
-    21.86
+    29.1
    ],
    "chunk": 15,
    "snapped": true
   },
   {
    "text": "site",
-   "start": 21.99,
-   "end": 22.24,
+   "start": 29.23,
+   "end": 29.48,
    "syllables": [
-    22.12
+    29.36
    ],
    "chunk": 15,
    "snapped": true
   },
   {
    "text": "Code",
-   "start": 22.82,
-   "end": 23.065,
+   "start": 31.73,
+   "end": 31.975,
    "syllables": [
-    22.95
+    31.86
    ],
    "chunk": 16,
    "snapped": true
   },
   {
    "text": "the",
-   "start": 23.065,
-   "end": 23.25,
+   "start": 31.975,
+   "end": 32.16,
    "syllables": [
-    23.18
+    32.09
    ],
    "chunk": 16,
    "snapped": true
   },
   {
    "text": "app",
-   "start": 23.25,
-   "end": 23.5,
+   "start": 32.16,
+   "end": 32.41,
    "syllables": [
-    23.32
+    32.23
    ],
    "chunk": 16,
    "snapped": true
   },
   {
    "text": "version",
-   "start": 23.68,
-   "end": 24.087,
+   "start": 33.258,
+   "end": 33.665,
    "syllables": [
-    23.782,
-    23.985
+    33.36,
+    33.563
    ],
    "chunk": 17,
    "snapped": false
   },
   {
    "text": "it",
-   "start": 24.087,
-   "end": 24.29,
+   "start": 33.665,
+   "end": 33.868,
    "syllables": [
-    24.188
+    33.766
    ],
    "chunk": 17,
    "snapped": false
   },
   {
    "text": "with",
-   "start": 24.29,
-   "end": 24.493,
+   "start": 33.868,
+   "end": 34.071,
    "syllables": [
-    24.392
+    33.97
    ],
    "chunk": 17,
    "snapped": false
   },
   {
    "text": "AI",
-   "start": 24.493,
-   "end": 24.9,
+   "start": 34.071,
+   "end": 34.478,
    "syllables": [
-    24.595,
-    24.798
+    34.173,
+    34.376
    ],
    "chunk": 17,
    "snapped": false
   },
   {
    "text": "ship",
-   "start": 25.08,
-   "end": 25.355,
+   "start": 35.32,
+   "end": 35.595,
    "syllables": [
-    25.27
+    35.51
    ],
    "chunk": 18,
    "snapped": true
   },
   {
    "text": "it",
-   "start": 25.355,
-   "end": 25.595,
+   "start": 35.595,
+   "end": 35.835,
    "syllables": [
-    25.44
+    35.68
    ],
    "chunk": 18,
    "snapped": true
   },
   {
    "text": "everywhere",
-   "start": 25.595,
-   "end": 26.25,
+   "start": 35.835,
+   "end": 36.49,
    "syllables": [
-    25.75,
-    25.95,
-    26.12
+    35.99,
+    36.19,
+    36.36
    ],
    "chunk": 18,
    "snapped": true
   },
   {
    "text": "That's",
-   "start": 27.25,
-   "end": 27.488,
+   "start": 38.39,
+   "end": 38.628,
    "syllables": [
-    27.369
+    38.509
    ],
    "chunk": 19,
    "snapped": false
   },
   {
    "text": "three-sixty",
-   "start": 27.488,
-   "end": 28.2,
+   "start": 38.628,
+   "end": 39.34,
    "syllables": [
-    27.606,
-    27.844,
-    28.081
+    38.746,
+    38.984,
+    39.221
    ],
    "chunk": 19,
    "snapped": false
   },
   {
    "text": "One",
-   "start": 28.65,
-   "end": 28.895,
+   "start": 39.79,
+   "end": 40.035,
    "syllables": [
-    28.75
+    39.89
    ],
    "chunk": 20,
    "snapped": true
   },
   {
    "text": "brief",
-   "start": 28.895,
-   "end": 29.32,
+   "start": 40.035,
+   "end": 40.46,
    "syllables": [
-    29.04
+    40.18
    ],
    "chunk": 20,
    "snapped": true
   },
   {
    "text": "the",
-   "start": 29.5,
-   "end": 29.745,
+   "start": 40.64,
+   "end": 40.885,
    "syllables": [
-    29.622
+    40.762
    ],
    "chunk": 21,
    "snapped": false
   },
   {
    "text": "whole",
-   "start": 29.745,
-   "end": 29.99,
+   "start": 40.885,
+   "end": 41.13,
    "syllables": [
-    29.868
+    41.008
    ],
    "chunk": 21,
    "snapped": false
   },
   {
    "text": "campaign",
-   "start": 29.99,
-   "end": 30.48,
+   "start": 41.13,
+   "end": 41.62,
    "syllables": [
-    30.113,
-    30.358
+    41.253,
+    41.498
    ],
    "chunk": 21,
    "snapped": false
   },
   {
    "text": "under",
-   "start": 30.66,
-   "end": 30.94,
+   "start": 41.8,
+   "end": 42.08,
    "syllables": [
-    30.68,
-    30.83
+    41.82,
+    41.97
    ],
    "chunk": 22,
    "snapped": true
   },
   {
    "text": "one",
-   "start": 30.94,
-   "end": 31.165,
+   "start": 42.08,
+   "end": 42.305,
    "syllables": [
-    31.05
+    42.19
    ],
    "chunk": 22,
    "snapped": true
   },
   {
    "text": "roof",
-   "start": 31.165,
-   "end": 31.54,
+   "start": 42.305,
+   "end": 42.68,
    "syllables": [
-    31.28
+    42.42
    ],
    "chunk": 22,
    "snapped": true
   },
   {
    "text": "Onemarsmedia",
-   "start": 33.24,
-   "end": 34.23,
+   "start": 44.38,
+   "end": 45.37,
    "syllables": [
-    33.339,
-    33.537,
-    33.735,
-    33.933,
-    34.131
+    44.479,
+    44.677,
+    44.875,
+    45.073,
+    45.271
    ],
    "chunk": 23,
    "snapped": false
   },
   {
    "text": "One",
-   "start": 34.58,
-   "end": 34.885,
+   "start": 45.72,
+   "end": 46.025,
    "syllables": [
-    34.732
+    45.872
    ],
    "chunk": 24,
    "snapped": false
   },
   {
    "text": "team",
-   "start": 34.885,
-   "end": 35.19,
+   "start": 46.025,
+   "end": 46.33,
    "syllables": [
-    35.037
+    46.177
    ],
    "chunk": 24,
    "snapped": false
   },
   {
    "text": "No",
-   "start": 35.47,
-   "end": 35.747,
+   "start": 46.61,
+   "end": 46.887,
    "syllables": [
-    35.608
+    46.748
    ],
    "chunk": 25,
    "snapped": false
   },
   {
    "text": "limits",
-   "start": 35.747,
-   "end": 36.3,
+   "start": 46.887,
+   "end": 47.44,
    "syllables": [
-    35.885,
-    36.162
+    47.025,
+    47.302
    ],
    "chunk": 25,
    "snapped": false

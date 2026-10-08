@@ -5,7 +5,6 @@
 set -euo pipefail
 A=assets/audio
 W=work
-DUR=42
 mkdir -p $W/vo $W/music
 python3 -I audio/align.py $A/vo2_joshua_take3.mp3 $A/vo2_script.txt $W/vo/align.json
 python3 -I audio/plan_timing.py $W/vo/align.json $A/plan_config.json $W/vo
@@ -13,6 +12,8 @@ python3 -I audio/vo_edit.py $A/vo2_joshua_take3.mp3 $W/vo/align.json $W/vo/gaps.
 cp $W/vo/vo.json src/film/editorial/timing/vo.json
 cp $W/vo/plan.json src/film/editorial/timing/plan.json
 cp $A/sfx/type_onsets.json src/film/editorial/timing/type_onsets.json
+# film length follows the timing (the credits land on the music's stop, then a short hold)
+DUR=$(npx tsx -e "import {DURATION} from './src/film/editorial/film'; import {FPS} from './src/film/editorial/tokens'; console.log(DURATION / FPS)")
 python3 -I audio/music_edit.py src/film/editorial/timing/plan.json $A/music_m4.mp3 $DUR $W/music/music_edit.wav
 npx tsx -e "
 import {sfxCues, DURATION} from './src/film/editorial/film';
