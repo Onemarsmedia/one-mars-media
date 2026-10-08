@@ -78,6 +78,8 @@ def main(align_path, cfg_path, out_dir):
         bars = -(-(music_film_start - loop["start_max"]) // bar)
         extra = min(bars * bar, loop["to"] - loop.get("from", 0.0))
         music_film_start -= extra
+        if music_film_start < 0:  # the music is already playing at frame 0: start into the source
+            src_start, music_film_start = -music_film_start, 0.0
     button = None
     for bars in m["button_bars"]:
         b = last + bars * bar

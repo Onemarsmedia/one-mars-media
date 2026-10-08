@@ -5,7 +5,7 @@ import type {AudioClip, Bezier, Comp, Key, Layer, Prop, Scene, ShapeItem, TextLa
 import metrics from './metrics.json';
 import {buildTileComps, TILE, tileInfo} from './tiles';
 import plan from './timing/plan.json';
-import typeOnsets from './timing/type_onsets.json';
+import typeOnsetsRaw from './timing/type_onsets.json';
 import vo from './timing/vo.json';
 import {BAND_Y, BASE, BIG, C, colX, COLW, DEG_SIZE, FONT, FPS, GRID_Y0, H, L1, L2, M, ROW_GAP, RUL_H, RUL_Y, W} from './tokens';
 
@@ -42,12 +42,16 @@ const at = (w: Word) => w.start - LEAD;
 // every tile lands on a beat of the music grid, ~1.5 s apart (timing/plan.json: hits per 30 deg)
 const hit = (deg: number) => (plan.hits as Record<string, number>)[String(deg)];
 const HIT = {90: hit(90), 180: hit(180), 270: hit(270), 360: hit(360)};
-const HERO_HOLD = 1.9; // s a hero tile stays in close-up
+const HERO_HOLD = 2.4; // s a hero tile stays in close-up
 const ROW_HOLD = 1.6; // s the camera stays on a row after its third tile lands
+
+// the brief is typed 1.67x faster than the recorded key sounds (the SFX is time-compressed to match: type_fast.wav)
+const TYPE_SPEED = 0.6;
+const typeOnsets = (typeOnsetsRaw as number[]).map((s) => s * TYPE_SPEED);
 
 /** Event times in seconds. */
 export const S = {
-  typeStart: 0.1,
+  typeStart: 0.1, // the cursor clicks into the brief at 0.07 s: the film opens on an action
   video: at(word('video')),
   every: at(word('every')),
   brk: at(word('one', 0)), // "...and ONE team": the brief breaks into the 12 slots
@@ -87,12 +91,12 @@ const MOVES = {
   endCard: S.endOut + 0.05,
 };
 const CAMERA: Cam[] = [
-  {t: 0, c: [960, 540], z: 100, e: SOFT}, // slow push while the brief is typed (headline and memo stay in frame)
-  {t: 3.4, c: [955, 532], z: 101.5, e: SOFT},
-  {t: 5.6, c: [958, 528], z: 102.5, e: MOVE},
-  {t: 7.2, c: [960, 540], z: 100, e: SOFT}, // out to the page as the brief breaks into the grid
-  {t: 8.6, c: [960, 540], z: 101.5, e: MOVE},
-  {t: 9.8, c: [540, 300], z: 172, e: SOFT}, // "It starts with the idea": row 1, left
+  {t: 0, c: [600, 360], z: 145, e: [0.25, 0.55, 0.3, 1]}, // frame 0 is already moving: pulling out from the headline
+  {t: 1.6, c: [958, 532], z: 101.5, e: SOFT},
+  {t: S.brk - 0.6, c: [958, 528], z: 103, e: MOVE}, // a slow push while the brief is edited
+  {t: S.brk + 1.0, c: [960, 540], z: 100, e: SOFT}, // out to the page as the brief breaks into the grid
+  {t: S.tileOn[0] - 2.2, c: [960, 540], z: 101.5, e: MOVE},
+  {t: S.tileOn[0] - 1.0, c: [540, 300], z: 172, e: SOFT}, // "It starts with the idea": row 1, left
   {t: MOVES.filmingPush, c: [595, 290], z: 175.5, e: PUSH},
   {t: T90, c: [948, 233.5], z: 320, e: SOFT}, // 090: FILMING hero (tile at the left margin, as f2)
   {t: MOVES.row1Right, c: [952, 236], z: 326, e: MOVE},
@@ -114,6 +118,16 @@ const CAMERA: Cam[] = [
 const camPos: Prop<Vec2> = {keys: CAMERA.map((k) => key(f(k.t), [-k.c[0], -k.c[1]] as Vec2, k.e))};
 const camScale: Prop<Vec2> = {keys: CAMERA.map((k) => key(f(k.t), [k.z, k.z] as Vec2, k.e))};
 
+// ------------------------------------------------------------------ depth (2.5D)
+// The page content is the reference plane. The column grid sits deeper and the tiles' shadows just below
+// the tiles: each plane gets the scale a camera at distance F/zoom would see (perspective), so the planes
+// slide against each other as the camera flies and grows apart as it pushes in. Same key times and eases
+// as the main camera (in AE: a null per plane, "CAMERA BACK" / "CAMERA SHADOWS").
+const FOCAL = 2000; // px
+const DEPTH = {back: -60, shadows: -14}; // px towards the camera (negative = further away)
+const planeScale = (zoom: number, depth: number) => (FOCAL / ((FOCAL * 100) / zoom - depth)) * 100;
+const planeCam = (depth: number): Prop<Vec2> => ({keys: CAMERA.map((k) => key(f(k.t), [planeScale(k.z, depth), planeScale(k.z, depth)] as Vec2, k.e))});
+
 // ------------------------------------------------------------------ small builders
 const rect = (x: number, y: number, w: number, h: number, color: string, opacity = 100): ShapeItem => ({
   geo: {type: 'rect', size: [w, h], center: [x + w / 2, y + h / 2]},
@@ -123,6 +137,36 @@ const vline = (x: number, y0: number, y1: number, color: string, width: number, 
   geo: {type: 'path', path: {v: [[x, y0], [x, y1]], closed: false}},
   stroke: {color, width, opacity},
 });
+// Soft shadows without effects: nested rects whose stacked opacity falls off like a Gaussian blur (sigma)
+// of an edge, darkest (peak) inside it. Plain shapes, so the MP4 and the AE project match pixel for pixel,
+// and the softness scales with the camera like the page does (an AE blur on a shape layer would not).
+const erfc = (x: number): number => {
+  const z = Math.abs(x);
+  const t = 1 / (1 + 0.5 * z);
+  const r = t * Math.exp(-z * z - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+  return x >= 0 ? r : 2 - r;
+};
+/** Steps outward from the edge (g, px) and the opacity (%) of each, outermost first. */
+function shadowSteps(sigma: number, peak: number, step: number): Array<{g: number; a: number}> {
+  const gs: number[] = [];
+  for (let g = -1.2 * sigma; g <= 3 * sigma + 1e-6; g += step) gs.push(g);
+  const target = (d: number) => (peak / 2) * erfc(d / (sigma * Math.SQRT2));
+  const out: Array<{g: number; a: number}> = [];
+  let covered = 1; // 1 - stacked alpha of the steps further out
+  for (let j = gs.length - 1; j >= 0; j--) {
+    const left = 1 - target(j === 0 ? gs[0] - step / 2 : (gs[j - 1] + gs[j]) / 2);
+    out.push({g: gs[j], a: Math.round((1 - left / covered) * 1e5) / 1e3});
+    covered = left;
+  }
+  return out;
+}
+/** A soft shadow under a w x h card at [0, 0]. */
+const cardShadow = (w: number, h: number, sigma: number, peak: number, step: number): ShapeItem[] =>
+  shadowSteps(sigma, peak, step).map(({g, a}) => ({
+    geo: {type: 'rect', size: [w + 2 * g, h + 2 * g], center: [w / 2, h / 2], roundness: Math.max(0, g)},
+    fill: {color: C.ink, opacity: a},
+  }));
+
 /** Letter-spacing in px (as in frames.html) to AE tracking. */
 const ls = (px: number, size: number) => (px / size) * 1000;
 const holdKeys = <T>(pairs: Array<[number, T]>): Prop<T> => ({keys: pairs.map(([t, v], i) => key(t, v, i < pairs.length - 1 ? 'hold' : undefined))});
@@ -402,6 +446,10 @@ function slicePos(k: number): Prop<Vec2> {
 const slotIn = (k: number) => sliceStart(k) + 0.32; // the reserved slot fades up under its slice
 const waveOut = (k: number) => S.endOut + 0.045 * (5 - (k % 6) + Math.floor(k / 6)); // right side first, clearing the contents list
 
+// A tile is a card: on its hit it pops up off the page (its shadow lifts and softens), then settles onto
+// the page, lifted. Until then the slot is printed flat on the page (no shadow).
+const POP = {up: 0.13, settle: 0.62, scale: 104}; // s, s, %
+const TC: Vec2 = [TILE.w / 2, TILE.h / 2]; // tiles and shadows scale around the tile centre
 function gridComp(): Comp {
   const layers: Layer[] = [];
   for (let i = 0; i < 12; i++) {
@@ -409,14 +457,18 @@ function gridComp(): Comp {
     const {num, name} = tileInfo(i);
     const a = f(slotIn(i));
     const b = f(waveOut(i));
+    const on = ON[i];
+    if (a + f(0.55) > on || on + f(POP.settle) > b) throw new Error(`tile ${num}: the pop overlaps the slot rise or the exit`);
+    const p: Vec2 = [x + TC[0], y + TC[1]];
     layers.push({
       kind: 'precomp',
       name: `${num} ${name}`,
       comp: `TILE ${num} ${name}`,
       collapse: true,
       transform: {
-        anchor: [0, 0],
-        position: {keys: [key(a, [x, y + 26] as Vec2, OUT), key(a + f(0.55), [x, y] as Vec2), key(b, [x, y] as Vec2, EXIT), key(b + f(0.4), [x, y - 30] as Vec2)]},
+        anchor: TC,
+        position: {keys: [key(a, [p[0], p[1] + 26] as Vec2, OUT), key(a + f(0.55), p), key(b, p, EXIT), key(b + f(0.4), [p[0], p[1] - 30] as Vec2)]},
+        scale: {keys: [key(on, [100, 100] as Vec2, OUT), key(on + f(POP.up), [POP.scale, POP.scale] as Vec2, SOFT), key(on + f(POP.settle), [100, 100] as Vec2)]},
         opacity: {keys: [key(a, 0, SOFT), key(a + f(0.4), 100), key(b, 100, SOFT), key(b + f(0.4), 0)]},
       },
       in: a,
@@ -426,12 +478,65 @@ function gridComp(): Comp {
   return {name: 'GRID', width: W, height: H, fps: FPS, duration: DURATION, layers};
 }
 
+/**
+ * Shadows under the live tiles, on the shadow plane just below the page: a soft key shadow (light from
+ * above) and a tight contact shadow where the card meets the page. On the hit the card pops up: the key
+ * shadow drops away and softens, the contact shadow lets go; both settle with the card.
+ */
+const TILE_SHADOW = {sigma: 11, peak: 22, step: 2.5, off: [2, 10] as Vec2, popOff: [5, 30] as Vec2, popScale: 107};
+const CONTACT_SHADOW = {sigma: 2, peak: 16, step: 1, off: [0, 1.5] as Vec2};
+function shadowLayers(): Layer[] {
+  const layers: Layer[] = [];
+  const key_ = cardShadow(TILE.w, TILE.h, TILE_SHADOW.sigma, TILE_SHADOW.peak / 100, TILE_SHADOW.step);
+  const contact = cardShadow(TILE.w, TILE.h, CONTACT_SHADOW.sigma, CONTACT_SHADOW.peak / 100, CONTACT_SHADOW.step);
+  const add = (v: Vec2, d: Vec2): Vec2 => [v[0] + d[0], v[1] + d[1]];
+  const sc = (v: number): Vec2 => [v, v];
+  for (let i = 0; i < 12; i++) {
+    const [x, y] = gridPos(i);
+    const {num, name} = tileInfo(i);
+    const b = f(waveOut(i));
+    const on = ON[i];
+    const up = on + f(POP.up);
+    const down = on + f(POP.settle);
+    const rest = add([x + TC[0], y + TC[1]], TILE_SHADOW.off);
+    layers.push({
+      kind: 'shape',
+      name: `${num} ${name} shadow`,
+      items: key_,
+      transform: {
+        anchor: TC,
+        // lifts off with the tile at the end (rises and grows as it fades)
+        position: {keys: [key(on, rest, OUT), key(up, add(rest, TILE_SHADOW.popOff), SOFT), key(down, rest), key(b, rest, EXIT), key(b + f(0.4), add(rest, [0, -30]))]},
+        scale: {keys: [key(on, sc(100), OUT), key(up, sc(TILE_SHADOW.popScale), SOFT), key(down, sc(100)), key(b, sc(100), EXIT), key(b + f(0.4), sc(TILE_SHADOW.popScale))]},
+        opacity: {keys: [key(on, 0, OUT), key(up, 70, SOFT), key(down, 100), key(b, 100, SOFT), key(b + f(0.4), 0)]},
+      },
+      in: on,
+      out: b + f(0.4),
+    });
+    layers.push({
+      kind: 'shape',
+      name: `${num} ${name} contact`,
+      items: contact,
+      transform: {
+        anchor: TC,
+        position: add([x + TC[0], y + TC[1]], CONTACT_SHADOW.off),
+        opacity: {keys: [key(on + f(POP.settle * 0.55), 0, SOFT), key(down, 100), key(b, 100, SOFT), key(b + f(0.15), 0)]},
+      },
+      in: on,
+      out: b + f(0.15),
+    });
+  }
+  return layers;
+}
+
 // ------------------------------------------------------------------ contents columns (screen-fixed)
 function indexComp(name: string, current: number): Comp {
   const cx = 1200;
   const x0 = colX(8);
   const x1 = W - M;
   const layers: Layer[] = [
+    // the column slides over the page: a soft shadow off its left edge
+    {kind: 'shape', name: 'column shadow', items: shadowSteps(12, 0.2, 2.5).map(({g, a}) => rect(cx - g, -10, W - cx + 50 + g, H + 20, C.ink, a))},
     {kind: 'shape', name: 'column paper', items: [rect(cx, 0, W - cx + 40, H, C.paper)]},
     {kind: 'shape', name: 'column guides', items: guideItems(64, H, 6, cx)},
     {kind: 'shape', name: 'column divider', items: [rect(cx, 64, 3, H - 64, C.ink)]},
@@ -522,13 +627,13 @@ function briefLayers(): Layer[] {
   const brk = S.brk;
   const capH = metrics.antonCapH * BIG;
   const layers: Layer[] = [];
-  layers.push(text('THE BRIEF', 'THE BRIEF', M, 112, FONT.sg800, 19, C.red, {tracking: ls(3, 19)}, {in: 0.2, out: brk - 0.2}));
+  layers.push(text('THE BRIEF', 'THE BRIEF', M, 112, FONT.sg800, 19, C.red, {tracking: ls(3, 19)}, {in: 0.04, out: brk - 0.2}));
   // memo: TO / FROM / RE, then the twist rows on the voice-over
   const mx = colX(8);
   const rows: Array<[string, string, number]> = [
-    ['TO', 'Onemarsmedia', 0.27],
-    ['FROM', 'Brand team', 0.34],
-    ['RE', 'Launch', 0.41],
+    ['TO', 'Onemarsmedia', 0.12],
+    ['FROM', 'Brand team', 0.19],
+    ['RE', 'Launch', 0.26],
     ['NEED', 'A video', S.video],
   ];
   rows.forEach(([k, v, t], i) => {
@@ -613,19 +718,34 @@ function briefLayers(): Layer[] {
 // ------------------------------------------------------------------ masthead (screen-fixed)
 function mastheadLayers(): Layer[] {
   const e = S.endOut + 0.1;
+  // like a website's sticky header: a soft shadow while the page moves under the masthead,
+  // gone whenever the camera rests on the whole page
+  const sticky: Prop<number> = {
+    keys: [
+      key(0, 0, SOFT),
+      key(f(0.3), 100),
+      key(f(0.9), 100, SOFT),
+      key(f(1.6), 0),
+      key(f(S.tileOn[0] - 2.0), 0, SOFT),
+      key(f(S.tileOn[0] - 1.2), 100),
+      key(f(S.wall - 0.9), 100, SOFT),
+      key(f(S.wall - 0.2), 0),
+    ],
+  };
   return [
+    {kind: 'shape', name: 'masthead shadow', items: shadowSteps(6, 0.16, 1.5).map(({g, a}) => rect(-10, -10, W + 20, 76 + g, C.ink, a)), transform: {opacity: sticky}, out: f(S.wall)},
     {kind: 'shape', name: 'masthead paper', items: [rect(0, 0, W, 64, C.paper)]},
-    {kind: 'shape', name: 'masthead rule', items: [rect(M, 62, W - 2 * M, 2.5, C.ink)], ...wipeX(M, 62, 0, 0.5)},
-    text('masthead Onemarsmedia', 'Onemarsmedia', M, 46, FONT.sg800, 19, C.ink, {tracking: ls(-0.2, 19)}, {in: 0.08, dy: 10, out: e, outDy: 10}),
+    {kind: 'shape', name: 'masthead rule', items: [rect(M, 62, W - 2 * M, 2.5, C.ink)], ...wipeX(M, 62, 0, 0.4)},
+    text('masthead Onemarsmedia', 'Onemarsmedia', M, 46, FONT.sg800, 19, C.ink, {tracking: ls(-0.2, 19)}, {in: 0.02, dy: 10, out: e, outDy: 10}),
     {
       ...text('masthead tagline', 'One brief. The whole campaign.', colX(4), 46, FONT.sg600, 19, C.ink),
       transform: {
-        position: {keys: [key(f(0.12), [colX(4), 56] as Vec2, OUT), key(f(0.57), [colX(4), 46] as Vec2), key(f(e + 0.15), [colX(4), 46] as Vec2, MOVE), key(f(e + 0.9), [M, 46] as Vec2)]},
-        opacity: fadeIn(f(0.12), 0.36),
+        position: {keys: [key(f(0.06), [colX(4), 56] as Vec2, OUT), key(f(0.51), [colX(4), 46] as Vec2), key(f(e + 0.15), [colX(4), 46] as Vec2, MOVE), key(f(e + 0.9), [M, 46] as Vec2)]},
+        opacity: fadeIn(f(0.06), 0.36),
       },
-      in: f(0.12),
+      in: f(0.06),
     },
-    text('masthead url', 'onemarsmedia.com', W - M, 46, FONT.sg600, 19, C.gr, {justify: 'right'}, {in: 0.16, dy: 10, out: e, outDy: 10}),
+    text('masthead url', 'onemarsmedia.com', W - M, 46, FONT.sg600, 19, C.gr, {justify: 'right'}, {in: 0.1, dy: 10, out: e, outDy: 10}),
     text('masthead sign-off', 'One team. No limits.', W - M, 46, FONT.sg600, 19, C.ink, {justify: 'right'}, {in: S.button + 0.3, dy: 10}),
   ];
 }
@@ -685,6 +805,8 @@ function endCardLayers(): Layer[] {
     }),
   );
   layers.push(text('onemarsmedia.com', 'onemarsmedia.com', M, BASE, FONT.sg600, 40, C.ink, {}, {in: S.nameEnd, dy: 14}));
+  // the cursor clicks the URL: a red underline draws under it
+  layers.push({kind: 'shape', name: 'URL underline', items: [rect(M, BASE + 9, metrics.url40, 3, C.red)], ...wipeX(M, BASE + 9, URL_CLICK, 0.4), in: f(URL_CLICK)});
   // ...and the credits land on the music's last hit
   const c = S.button;
   const credit = (name: string, s: string, x: number, y: number, font: (typeof FONT)[keyof typeof FONT], size: number, color: string, t: number, extra: Partial<TextLayer> = {}) =>
@@ -695,6 +817,114 @@ function endCardLayers(): Layer[] {
   credit('credit DIRECTED BY', 'DIRECTED BY', colX(4), 760, FONT.sg800, 17, C.gr, c + 0.1, {tracking: ls(1.6, 17)});
   credit('credit director', 'Marek Mars', colX(4), 806, FONT.sg700, 34, C.ink, c + 0.16);
   return layers;
+}
+
+// ------------------------------------------------------------------ the cursor (screen-fixed, pointing at the page)
+// A designer's arrow cursor leads the eye: it clicks into the brief, strikes "A video", breaks the brief
+// apart, taps every tile as it lands, points at the counter, and at the end clicks the URL. Its path is
+// planned on the page (world points) and projected through the camera every 2 frames, so it stays on
+// what it points at while the camera flies; its size stays the same on screen.
+type WP = {t: number; p: Vec2; click?: boolean};
+const tileTarget = (i: number): Vec2 => [gridPos(i)[0] + TILE.w * 0.62, gridPos(i)[1] + TILE.h * 0.62];
+const URL_CLICK = S.button + 0.95;
+function cursorPlan(): WP[] {
+  const w: WP[] = [
+    {t: 0, p: [71, 252]},
+    {t: 0.07, p: [71, 252], click: true}, // into the brief: typing starts
+    {t: 0.55, p: [71, 252]},
+    {t: 1.25, p: [760, 430]},
+    {t: S.video - 0.15, p: [1440, 250]},
+    {t: S.every - 0.04, p: [1468, 228], click: true}, // strike "A video"
+    {t: S.every + 0.4, p: [1468, 228]},
+    {t: S.brk - 0.05, p: [540, 330], click: true}, // the brief breaks into the slots
+  ];
+  const hold = (t: number, p: Vec2) => w.push({t, p});
+  const glideTo = (t: number, p: Vec2, click = false) => {
+    const last = w[w.length - 1];
+    const start = Math.max(last.t + 0.35, t - 1.0);
+    if (start > last.t + 0.01 && start < t - 0.05) hold(start, last.p);
+    w.push({t, p, click});
+  };
+  S.tileOn.forEach((t, i) => {
+    glideTo(t - 0.04, tileTarget(i), true);
+    if (i === 5) {
+      // "That's halfway": point at the counter
+      glideTo(S.halfway - 0.2, [1470, 760]);
+      hold(S.nowTake + 0.2, [1470, 760]);
+    }
+  });
+  hold(MOVES.pullBack, w[w.length - 1].p);
+  glideTo(S.wall + 0.2, [1250, 360]);
+  glideTo(S.endOut - 0.3, [nowX(12) + 120, BAND_Y + 70]); // "One campaign."
+  hold(S.button + 0.15, [M + 260, 1180]); // hidden meanwhile; comes back from below for the URL
+  glideTo(URL_CLICK, [M + 170, BASE - 12], true);
+  hold(DURATION / FPS, [M + 170, BASE - 12]);
+  return w;
+}
+const worldToScreen = (t: number, p: Vec2): Vec2 => {
+  const z = evalVec2(camScale, t, [100, 100])[0] / 100;
+  const c = evalVec2(camPos, t, [0, 0]);
+  return [W / 2 + z * (p[0] + c[0]), H / 2 + z * (p[1] + c[1])];
+};
+function cursorWorld(w: WP[], tSec: number): Vec2 {
+  let k = 0;
+  while (k < w.length - 2 && w[k + 1].t <= tSec) k++;
+  const a = w[k];
+  const b = w[k + 1] ?? a;
+  if (tSec <= a.t || b.t <= a.t) return a.p;
+  if (tSec >= b.t) return b.p;
+  const u = bezierProgress(SOFT, (tSec - a.t) / (b.t - a.t));
+  return [a.p[0] + (b.p[0] - a.p[0]) * u, a.p[1] + (b.p[1] - a.p[1]) * u];
+}
+const CURSOR_PLAN = cursorPlan();
+const CURSOR_CLICKS = CURSOR_PLAN.filter((x) => x.click).map((x) => x.t);
+const cursorPos: Prop<Vec2> = {
+  keys: Array.from({length: Math.floor(DURATION / 2) + 1}, (_, n) => {
+    const fr = Math.min(DURATION, n * 2);
+    return key(fr, worldToScreen(fr, cursorWorld(CURSOR_PLAN, fr / FPS)));
+  }),
+};
+
+function cursorLayers(): Layer[] {
+  const S_ = 1.15;
+  const arrow: Vec2[] = (
+    [
+      [0, 0],
+      [0, 25],
+      [6, 19.5],
+      [10.5, 29],
+      [14.5, 27.2],
+      [10, 18],
+      [18, 18],
+    ] as Vec2[]
+  ).map(([x, y]) => [x * S_, y * S_]);
+  const press: Key<Vec2>[] = [];
+  const ringPos: Key<Vec2>[] = [];
+  const ringScale: Key<Vec2>[] = [];
+  const ringOp: Key<number>[] = [key(0, 0, 'hold')];
+  for (const tc of CURSOR_CLICKS) {
+    const t = f(tc);
+    press.push(key(Math.max(0, t - f(0.06)), [100, 100] as Vec2, SOFT), key(t, [86, 86] as Vec2, SOFT), key(t + f(0.12), [100, 100] as Vec2));
+    ringPos.push(key(t, worldToScreen(t, cursorWorld(CURSOR_PLAN, tc)), 'hold'));
+    ringScale.push(key(t, [25, 25] as Vec2, OUT), key(t + f(0.42), [100, 100] as Vec2));
+    ringOp.push(key(t, 90, SOFT), key(t + f(0.42), 0, 'hold'));
+  }
+  delete ringPos[ringPos.length - 1].ease;
+  delete ringOp[ringOp.length - 1].ease;
+  const visible: Prop<number> = {keys: [key(0, 100), key(f(S.endOut), 100, SOFT), key(f(S.endOut + 0.3), 0, 'hold'), key(f(S.button + 0.15), 0, SOFT), key(f(S.button + 0.45), 100)]};
+  return [
+    {kind: 'shape', name: 'click ring', items: [{geo: {type: 'path', path: circlePath(0, 0, 22)}, stroke: {color: C.red, width: 3}}], transform: {position: {keys: ringPos}, scale: {keys: ringScale}, opacity: {keys: ringOp}}, label: 1},
+    {
+      kind: 'shape',
+      name: 'cursor',
+      items: [
+        ...([[1.5, 3], [2.5, 5], [3.5, 7]] as Vec2[]).map(([dx, dy]): ShapeItem => ({geo: {type: 'path', path: {v: arrow.map(([x, y]) => [x + dx, y + dy] as Vec2), closed: true}}, fill: {color: C.ink, opacity: 7}})),
+        {geo: {type: 'path', path: {v: arrow, closed: true}}, fill: {color: C.ink}, stroke: {color: C.paper, width: 2, join: 'miter'}},
+      ],
+      transform: {anchor: [0, 0], position: cursorPos, scale: {keys: press}, opacity: visible},
+      label: 1,
+    },
+  ];
 }
 
 // ------------------------------------------------------------------ scene
@@ -711,7 +941,7 @@ export function buildEditorialScene(): Scene {
   add(indexComp('INDEX 12 DISTRIBUTION', 11));
 
   add({
-    name: 'WORLD',
+    name: 'WORLD BACK',
     width: W,
     height: H,
     fps: FPS,
@@ -719,6 +949,16 @@ export function buildEditorialScene(): Scene {
     layers: [
       // column guides run past the page on every side so the camera never finds their ends
       {kind: 'shape', name: 'guides', items: guideItems(-400, H + 400, 7, -Infinity, [-4, 16]), label: 16},
+    ],
+  });
+  add({name: 'WORLD SHADOWS', width: W, height: H, fps: FPS, duration: DURATION, layers: shadowLayers()});
+  add({
+    name: 'WORLD',
+    width: W,
+    height: H,
+    fps: FPS,
+    duration: DURATION,
+    layers: [
       {kind: 'precomp', name: 'GRID', comp: 'GRID', collapse: true, label: 10},
       ...briefLayers(),
       {kind: 'precomp', name: 'BAND', comp: 'BAND', collapse: true, label: 13},
@@ -751,10 +991,15 @@ export function buildEditorialScene(): Scene {
       {t: T.button, label: 'Music button: credits'},
     ],
     layers: [
+      {kind: 'null', name: 'CAMERA BACK', transform: {anchor: [0, 0], position: [W / 2, H / 2], scale: planeCam(DEPTH.back)}, label: 2},
+      {kind: 'precomp', name: 'WORLD BACK', comp: 'WORLD BACK', collapse: true, parent: 'CAMERA BACK', transform: {anchor: [0, 0], position: camPos}, label: 16},
+      {kind: 'null', name: 'CAMERA SHADOWS', transform: {anchor: [0, 0], position: [W / 2, H / 2], scale: planeCam(DEPTH.shadows)}, label: 2},
+      {kind: 'precomp', name: 'WORLD SHADOWS', comp: 'WORLD SHADOWS', collapse: true, parent: 'CAMERA SHADOWS', transform: {anchor: [0, 0], position: camPos}, label: 16},
       {kind: 'null', name: 'CAMERA', transform: {anchor: [0, 0], position: [W / 2, H / 2], scale: camScale}, label: 2},
       {kind: 'precomp', name: 'WORLD', comp: 'WORLD', collapse: true, parent: 'CAMERA', transform: {anchor: [0, 0], position: camPos}, label: 10},
       ...SLIDES.map(slideLayer),
       ...mastheadLayers(),
+      ...cursorLayers(),
     ],
   };
   add(main);
@@ -790,6 +1035,7 @@ export function motionAmount(t: number): number {
     const k = slideKeys(tIn, tOut);
     m = Math.max(m, dist(evalVec2(k, t - half, [0, 0]), evalVec2(k, t + half, [0, 0])));
   }
+  m = Math.max(m, dist(evalVec2(cursorPos, t - half, [0, 0]), evalVec2(cursorPos, t + half, [0, 0])));
   for (let k = 0; k < 12; k++) {
     const p = slicePos(k);
     m = Math.max(m, z(t) * dist(evalVec2(p, t - half, [0, 0]), evalVec2(p, t + half, [0, 0])));
@@ -823,7 +1069,7 @@ export function sfxCues(): Array<{file: string; t: number; gainDb: number}> {
   const cam = (t: number) => CAMERA.findIndex((k) => k.t === t);
   const move = (t: number) => fastest(CAMERA[cam(t)].e!, t, CAMERA[cam(t) + 1].t);
   return [
-    {file: 'type.wav', t: S.typeStart, gainDb: -20},
+    {file: 'type_fast.wav', t: S.typeStart, gainDb: -20},
     whoosh(fastest([0.55, 0, 0.1, 1], S.brk, S.brk + SLICE_DUR), -32),
     ...S.tileOn.map((t) => ({file: 'tap.wav', t, gainDb: -27})),
     {file: 'flap.wav', t: HIT[90], gainDb: -27}, // the 180 and 270 steps happen off screen: no flap there
@@ -832,6 +1078,7 @@ export function sfxCues(): Array<{file: string; t: number; gainDb: number}> {
     {file: 'lock.wav', t: HIT[360], gainDb: -20},
     whoosh(move(MOVES.pullBack), -30),
     whoosh(fastest(MOVE, S.lift + 0.15, S.button), -33),
+    ...CURSOR_CLICKS.filter((t) => !S.tileOn.some((h) => Math.abs(h - t) < 0.1)).map((t) => ({file: 'tap.wav', t, gainDb: -30})),
     {file: 'tap.wav', t: S.oneTeam, gainDb: -28},
     {file: 'tap.wav', t: S.noLimits, gainDb: -28},
   ];

@@ -23,6 +23,7 @@ const m = {
   signoff: {oneTeam: +width(anton, 'One team', 260).toFixed(2), noLimits: +width(anton, 'No limits', 260).toFixed(2)},
   deliverables: Object.fromEntries(Array.from({length: 13}, (_, n) => [n, +width(sg600, `${n} of 12 deliverables`, 36).toFixed(2)])),
   wordmark112: +width(sg800, 'Onemarsmedia', 112, -3.8).toFixed(2),
+  url40: +width(sg600, 'onemarsmedia.com', 40).toFixed(2),
 };
 fs.writeFileSync('src/film/editorial/metrics.json', JSON.stringify(m, null, 1));
 console.log(JSON.stringify(m).slice(0, 400));

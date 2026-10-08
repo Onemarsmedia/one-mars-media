@@ -1,8 +1,9 @@
 # Onemarsmedia 360 explainer
 
-42-second website explainer ("One brief → the whole campaign"), Editorial direction, v3:
-one camera flies over a single page with no cuts, the tile illustrations keep moving, and the film ends
-on a clear credit card (Onemarsmedia Limited, directed by Marek Mars). 60 fps, motion blur.
+54-second website explainer ("One brief → the whole campaign"), Editorial direction, v5:
+one camera flies over a single page with no cuts, every tile lands on a beat and stays long enough to read,
+the page has 2.5D depth (grid, shadows and tiles on separate planes), an arrow cursor leads the eye, and
+the film ends on a clear credit card (Onemarsmedia Limited, directed by Marek Mars). 60 fps, motion blur.
 The film is described once in an After-Effects-shaped scene model and rendered two ways:
 
 - **Remotion** → MP4 for the website (`src/render/SceneRenderer.tsx`)
@@ -43,7 +44,11 @@ The website uses the versioned copies in `../public/video/`.
 - **Words on screen / layout / timing:** `src/film/editorial/film.ts`. Every event is derived from
   `timing/vo.json` (word times) and `timing/plan.json` (beat grid, music edit).
 - **Camera:** the `CAMERA` table in `film.ts` (time, world point at the centre of the screen, zoom, ease).
-  In AE it is the null `CAMERA` (scale) and the precomp `WORLD` (position).
+  In AE it is the null `CAMERA` (scale) and the precomp `WORLD` (position). Two depth planes follow it at
+  perspective-correct scales (`planeScale`, `DEPTH`): `CAMERA BACK`/`WORLD BACK` (grid) and
+  `CAMERA SHADOWS`/`WORLD SHADOWS` (tile shadows).
+- **Cursor:** `cursorPlan()` in `film.ts` (time, point on the page, click). It is projected through the camera,
+  so it stays on what it points at; clicks that are not tile hits get a quiet tap.
 - **Voice-over:** replace `assets/audio/vo2_*.mp3` and `vo2_script.txt` (keep the commas where the picture
   changes), adjust `assets/audio/plan_config.json` (pauses, which words land on the beat), then
   `bash scripts/build-all.sh`.

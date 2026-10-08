@@ -76,7 +76,15 @@ CO JEST W ŚRODKU
 - Wszystko jest natywne i edytowalne: warstwy kształtów, teksty, klatki kluczowe.
 - Kamera: null "CAMERA" (skala = zbliżenie) i prekompozycja "WORLD" (pozycja = kadr).
   Cała strona (brief, kafle, pasek z licznikiem, plansza końcowa) leży w "WORLD".
-  Ruch kamery zmieniasz w jednym miejscu: Scale na "CAMERA" i Position na "WORLD" (te same czasy kluczy).
+  Głębia (2.5D): za stroną leżą jeszcze dwie płaszczyzny, każda z własnym nullem:
+  "CAMERA BACK" + "WORLD BACK" (linie siatki) i "CAMERA SHADOWS" + "WORLD SHADOWS" (cienie kafli).
+  Ich Scale to zbliżenie przeliczone na głębokość (dalsza płaszczyzna rośnie wolniej),
+  dlatego przy najazdach warstwy się rozjeżdżają.
+  Ruch kamery zmieniasz tak: Scale na trzech nullach CAMERA i Position na trzech prekompozycjach WORLD
+  (te same czasy kluczy). Wzór na skalę płaszczyzn jest w film.ts (planeScale).
+- Kursor (strzałka) prowadzi widza: warstwy "cursor" i "click ring" na samej górze kompozycji głównej.
+  Pozycja to klatki kluczowe co 2 klatki (ścieżka po stronie przeliczona przez kamerę),
+  klik = klucze Scale na "cursor" i jeden błysk "click ring".
 - Do ekranu przypięte są tylko: nagłówek (masthead) oraz kolumny "INDEX 03 FILMING" i "INDEX 12 DISTRIBUTION",
   które wjeżdżają z prawej.
 - Licznik 360: prekompozycja "DEGREES 360", null "360 CONTROL", suwak "Degrees".
@@ -118,7 +126,15 @@ WHAT IS INSIDE
 - Everything is native and editable: shape layers, text, keyframes.
 - Camera: null "CAMERA" (scale = zoom) and the precomp "WORLD" (position = framing).
   The whole page (brief, tiles, counter band, final card) lives in "WORLD".
-  Change the camera move in one place: Scale on "CAMERA" and Position on "WORLD" (same key times).
+  Depth (2.5D): two more planes sit behind the page, each with its own null:
+  "CAMERA BACK" + "WORLD BACK" (the grid lines) and "CAMERA SHADOWS" + "WORLD SHADOWS" (the tile shadows).
+  Their Scale is the zoom converted to their depth (a farther plane grows more slowly),
+  so the layers separate during the push-ins.
+  To change the camera move: Scale on the three CAMERA nulls and Position on the three WORLD precomps
+  (same key times). The plane scale formula is in film.ts (planeScale).
+- An arrow cursor leads the viewer: the "cursor" and "click ring" layers at the top of the main comp.
+  Its position is keyed every 2 frames (a path on the page projected through the camera);
+  a click is Scale keys on "cursor" and one flash of "click ring".
 - Fixed to the screen: only the masthead and the "INDEX 03 FILMING" / "INDEX 12 DISTRIBUTION" columns,
   which slide in from the right.
 - 360 counter: precomp "DEGREES 360", null "360 CONTROL", slider "Degrees".
