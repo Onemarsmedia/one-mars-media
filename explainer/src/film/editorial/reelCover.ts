@@ -117,3 +117,47 @@ export function buildReelCoverScene(): Scene {
   comps[main.name] = main;
   return {main: main.name, comps, fonts: Object.values(FONT)};
 }
+
+/**
+ * Dark cover for the Reels tab (full 9:16, no feed crop): ink page, the tagline big on three lines in paper
+ * with red full stops, the 12 live tiles as cream cards, and a quiet footer. Sits next to a 16:9 film posted
+ * with black bars. Pick the frame with stills.mjs ReelCoverDark.
+ */
+export function buildReelCoverDarkScene(): Scene {
+  const duration = COVER.seconds * FPS;
+  const comps: Record<string, Comp> = {};
+  const layers: Layer[] = [];
+  const HS = 200;
+  const lines: Array<[string, number, number | null]> = [
+    ['One brief', 380, 713.5],
+    ['The whole', 570, null],
+    ['campaign', 760, 792.7],
+  ];
+  lines.forEach(([s, y, stop], i) => {
+    layers.push(txt(`headline ${i + 1}`, s, X0 - 5, y, FONT.anton, HS, C.paper));
+    if (stop !== null) layers.push(txt(`headline ${i + 1} stop`, '.', X0 - 5 + stop, y, FONT.anton, HS, C.red));
+  });
+  // on black the card edges show: each tile sits on a cream card with a margin, so nothing touches the edge
+  const gridY = 840;
+  const PAD = 10;
+  const CW = (X1 - X0 - 3 * GAP) / 4; // card width
+  const s = (CW - 2 * PAD) / TILE.w;
+  const CH = TILE.h * s + 2 * PAD;
+  for (let i = 0; i < 12; i++) {
+    const on = Math.round(0.3 * FPS);
+    const all = buildTileComps(i, duration, FPS, {on, activeOff: on, loopEnd: duration});
+    for (const c of all) comps[c.name] = c;
+    const x = X0 + (i % 4) * (CW + GAP);
+    const y = gridY + Math.floor(i / 4) * (CH + GAP);
+    layers.push({kind: 'shape', name: `card ${i + 1}`, items: [rect(x, y, CW, CH, C.paper)]});
+    layers.push({kind: 'precomp', name: `tile ${i + 1}`, comp: all[0].name, collapse: true, transform: {anchor: [0, 0], position: [x + PAD, y + PAD], scale: [s * 100, s * 100]}});
+  }
+  const footY = gridY + 3 * CH + 2 * GAP + 60;
+  layers.push({kind: 'shape', name: 'footer rule', items: [rect(X0, footY, X1 - X0, 2, C.paper, 30)]});
+  layers.push(txt('footer Onemarsmedia', 'Onemarsmedia', X0, footY + 62, FONT.sg800, 40, C.paper, {tracking: track(-0.4, 40)}));
+  layers.push(txt('footer url', 'onemarsmedia.com', X1, footY + 62, FONT.sg600, 34, C.soft, {justify: 'right'}));
+
+  const main: Comp = {name: 'REEL COVER DARK', width: COVER.w, height: COVER.h, fps: FPS, duration, bg: C.ink, layers};
+  comps[main.name] = main;
+  return {main: main.name, comps, fonts: Object.values(FONT)};
+}
