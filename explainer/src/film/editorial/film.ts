@@ -536,7 +536,7 @@ function indexComp(name: string, current: number): Comp {
   const x1 = W - M;
   const layers: Layer[] = [
     // the column slides over the page: a soft shadow off its left edge
-    {kind: 'shape', name: 'column shadow', items: shadowSteps(12, 0.2, 2.5).map(({g, a}) => rect(cx - g, -10, W - cx + 50 + g, H + 20, C.ink, a))},
+    {kind: 'shape', name: 'column shadow', items: shadowSteps(18, 0.26, 3).map(({g, a}) => rect(cx - g, -10, W - cx + 50 + g, H + 20, C.ink, a))},
     {kind: 'shape', name: 'column paper', items: [rect(cx, 0, W - cx + 40, H, C.paper)]},
     {kind: 'shape', name: 'column guides', items: guideItems(64, H, 6, cx)},
     {kind: 'shape', name: 'column divider', items: [rect(cx, 64, 3, H - 64, C.ink)]},

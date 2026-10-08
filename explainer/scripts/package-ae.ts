@@ -82,6 +82,12 @@ CO JEST W ŚRODKU
   dlatego przy najazdach warstwy się rozjeżdżają.
   Ruch kamery zmieniasz tak: Scale na trzech nullach CAMERA i Position na trzech prekompozycjach WORLD
   (te same czasy kluczy). Wzór na skalę płaszczyzn jest w film.ts (planeScale).
+- Cienie (bez efektów, same kształty, więc wyglądają identycznie jak w MP4 i skalują się z kamerą):
+  pod każdym gotowym kaflem "NN NAZWA shadow" (miękki cień) i "NN NAZWA contact" (ciemna krawędź przy stronie)
+  w "WORLD SHADOWS". Kafel to karta: warstwa "... | card" w prekompozycji kafla zasłania jego własny cień.
+  Na uderzeniu kafel podskakuje (Scale 104% na warstwie kafla w "GRID"), a cień odrywa się i opada razem z nim.
+  "column shadow" (kolumny INDEX) i "masthead shadow" (nagłówek, tylko gdy strona przesuwa się pod nim).
+  Słabsze cienie kafli: zmniejsz Opacity warstwy "WORLD SHADOWS" w kompozycji głównej (jedna wartość, bez kluczy).
 - Kursor (strzałka) prowadzi widza: warstwy "cursor" i "click ring" na samej górze kompozycji głównej.
   Pozycja to klatki kluczowe co 2 klatki (ścieżka po stronie przeliczona przez kamerę),
   klik = klucze Scale na "cursor" i jeden błysk "click ring".
@@ -132,6 +138,12 @@ WHAT IS INSIDE
   so the layers separate during the push-ins.
   To change the camera move: Scale on the three CAMERA nulls and Position on the three WORLD precomps
   (same key times). The plane scale formula is in film.ts (planeScale).
+- Shadows (no effects, plain shapes, so they look exactly like the MP4 and scale with the camera):
+  under every live tile "NN NAME shadow" (the soft shadow) and "NN NAME contact" (the dark edge at the page)
+  in "WORLD SHADOWS". A tile is a card: the "... | card" layer in the tile precomp hides its own shadow.
+  On its hit the tile pops (Scale 104% on the tile layer in "GRID") and its shadow lifts and settles with it.
+  "column shadow" (the INDEX columns) and "masthead shadow" (the masthead, only while the page moves under it).
+  Weaker tile shadows: lower the Opacity of the "WORLD SHADOWS" layer in the main comp (one value, no keys).
 - An arrow cursor leads the viewer: the "cursor" and "click ring" layers at the top of the main comp.
   Its position is keyed every 2 frames (a path on the page projected through the camera);
   a click is Scale keys on "cursor" and one flash of "click ring".

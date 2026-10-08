@@ -381,6 +381,14 @@ export function buildTileComps(i: number, duration: number, fps: number, timing?
   const fadeOut = (base = 100): Num => ({keys: [{t: off, v: base, ease: [0.4, 0, 0.6, 1]}, {t: off + FADE, v: 0}]});
   const comps: Comp[] = [];
 
+  // a live tile is a card above the page: an opaque backing (header included) that hides its own shadow
+  layers.push({
+    kind: 'shape',
+    name: `${pre} | card`,
+    items: [{geo: {type: 'rect', size: [TILE.w, TILE.h], center: [TILE.w / 2, TILE.h / 2]}, fill: {color: C.paper}}],
+    in: on,
+    label: 16,
+  });
   // EMPTY look (reserved slot) until the panel has wiped on
   if (timing) {
     const gone = Math.round(0.15 * fps);

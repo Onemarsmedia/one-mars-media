@@ -47,6 +47,9 @@ The website uses the versioned copies in `../public/video/`.
   In AE it is the null `CAMERA` (scale) and the precomp `WORLD` (position). Two depth planes follow it at
   perspective-correct scales (`planeScale`, `DEPTH`): `CAMERA BACK`/`WORLD BACK` (grid) and
   `CAMERA SHADOWS`/`WORLD SHADOWS` (tile shadows).
+- **Shadows:** `shadowLayers()` (tiles: soft key + contact shadow, both pop with the tile on its hit), the column
+  shadow in `indexComp()` and the sticky masthead shadow in `mastheadLayers()`. They are stacked rects with a
+  Gaussian falloff (`shadowSteps`), not effects: the MP4 and AE match exactly and the softness scales with the camera.
 - **Cursor:** `cursorPlan()` in `film.ts` (time, point on the page, click). It is projected through the camera,
   so it stays on what it points at; clicks that are not tile hits get a quiet tap.
 - **Voice-over:** replace `assets/audio/vo2_*.mp3` and `vo2_script.txt` (keep the commas where the picture
