@@ -1,0 +1,767 @@
+{
+ "offset": 1.4,
+ "vo_duration": 37.77,
+ "chunks": [
+  {
+   "text": "Your launch has a brief",
+   "punct": ".",
+   "start": 1.45,
+   "end": 2.78
+  },
+  {
+   "text": "Then it gets an agency",
+   "punct": ",",
+   "start": 4.28,
+   "end": 5.89
+  },
+  {
+   "text": "a crew",
+   "punct": ",",
+   "start": 6.19,
+   "end": 6.32
+  },
+  {
+   "text": "an editor",
+   "punct": ",",
+   "start": 6.57,
+   "end": 7.13
+  },
+  {
+   "text": "a designer",
+   "punct": ".",
+   "start": 7.38,
+   "end": 8.96
+  },
+  {
+   "text": "And nobody holds the whole thing",
+   "punct": ".",
+   "start": 9.56,
+   "end": 11.44
+  },
+  {
+   "text": "Onemarsmedia pulls it into one line",
+   "punct": ".",
+   "start": 13.24,
+   "end": 15.48
+  },
+  {
+   "text": "We plan it",
+   "punct": ".",
+   "start": 16.88,
+   "end": 17.56
+  },
+  {
+   "text": "We shoot it",
+   "punct": ".",
+   "start": 19.96,
+   "end": 20.7
+  },
+  {
+   "text": "We cut it",
+   "punct": ",",
+   "start": 23.1,
+   "end": 23.75
+  },
+  {
+   "text": "and ship it everywhere it needs to go",
+   "punct": ".",
+   "start": 24.1,
+   "end": 25.99
+  },
+  {
+   "text": "Thirteen years of UK production",
+   "punct": ".",
+   "start": 28.19,
+   "end": 30.24
+  },
+  {
+   "text": "For brands like Vogue Arabia",
+   "punct": ",",
+   "start": 30.84,
+   "end": 32.36
+  },
+  {
+   "text": "Adidas and ASOS",
+   "punct": ".",
+   "start": 32.66,
+   "end": 34.0
+  },
+  {
+   "text": "One team",
+   "punct": ".",
+   "start": 35.6,
+   "end": 36.24
+  },
+  {
+   "text": "One line",
+   "punct": ".",
+   "start": 36.74,
+   "end": 37.33
+  },
+  {
+   "text": "Onemarsmedia",
+   "punct": ".",
+   "start": 38.13,
+   "end": 39.11
+  }
+ ],
+ "words": [
+  {
+   "text": "Your",
+   "start": 1.45,
+   "end": 1.716,
+   "syllables": [
+    1.583
+   ],
+   "chunk": 0,
+   "snapped": false
+  },
+  {
+   "text": "launch",
+   "start": 1.716,
+   "end": 1.982,
+   "syllables": [
+    1.849
+   ],
+   "chunk": 0,
+   "snapped": false
+  },
+  {
+   "text": "has",
+   "start": 1.982,
+   "end": 2.248,
+   "syllables": [
+    2.115
+   ],
+   "chunk": 0,
+   "snapped": false
+  },
+  {
+   "text": "a",
+   "start": 2.248,
+   "end": 2.514,
+   "syllables": [
+    2.381
+   ],
+   "chunk": 0,
+   "snapped": false
+  },
+  {
+   "text": "brief",
+   "start": 2.514,
+   "end": 2.78,
+   "syllables": [
+    2.647
+   ],
+   "chunk": 0,
+   "snapped": false
+  },
+  {
+   "text": "Then",
+   "start": 4.28,
+   "end": 4.51,
+   "syllables": [
+    4.395
+   ],
+   "chunk": 1,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 4.51,
+   "end": 4.74,
+   "syllables": [
+    4.625
+   ],
+   "chunk": 1,
+   "snapped": false
+  },
+  {
+   "text": "gets",
+   "start": 4.74,
+   "end": 4.97,
+   "syllables": [
+    4.855
+   ],
+   "chunk": 1,
+   "snapped": false
+  },
+  {
+   "text": "an",
+   "start": 4.97,
+   "end": 5.2,
+   "syllables": [
+    5.085
+   ],
+   "chunk": 1,
+   "snapped": false
+  },
+  {
+   "text": "agency",
+   "start": 5.2,
+   "end": 5.89,
+   "syllables": [
+    5.315,
+    5.545,
+    5.775
+   ],
+   "chunk": 1,
+   "snapped": false
+  },
+  {
+   "text": "a",
+   "start": 6.19,
+   "end": 6.255,
+   "syllables": [
+    6.223
+   ],
+   "chunk": 2,
+   "snapped": false
+  },
+  {
+   "text": "crew",
+   "start": 6.255,
+   "end": 6.32,
+   "syllables": [
+    6.287
+   ],
+   "chunk": 2,
+   "snapped": false
+  },
+  {
+   "text": "an",
+   "start": 6.57,
+   "end": 6.71,
+   "syllables": [
+    6.64
+   ],
+   "chunk": 3,
+   "snapped": false
+  },
+  {
+   "text": "editor",
+   "start": 6.71,
+   "end": 7.13,
+   "syllables": [
+    6.78,
+    6.92,
+    7.06
+   ],
+   "chunk": 3,
+   "snapped": false
+  },
+  {
+   "text": "a",
+   "start": 7.38,
+   "end": 7.775,
+   "syllables": [
+    7.577
+   ],
+   "chunk": 4,
+   "snapped": false
+  },
+  {
+   "text": "designer",
+   "start": 7.775,
+   "end": 8.96,
+   "syllables": [
+    7.973,
+    8.367,
+    8.763
+   ],
+   "chunk": 4,
+   "snapped": false
+  },
+  {
+   "text": "And",
+   "start": 9.56,
+   "end": 9.795,
+   "syllables": [
+    9.677
+   ],
+   "chunk": 5,
+   "snapped": false
+  },
+  {
+   "text": "nobody",
+   "start": 9.795,
+   "end": 10.5,
+   "syllables": [
+    9.913,
+    10.148,
+    10.383
+   ],
+   "chunk": 5,
+   "snapped": false
+  },
+  {
+   "text": "holds",
+   "start": 10.5,
+   "end": 10.735,
+   "syllables": [
+    10.618
+   ],
+   "chunk": 5,
+   "snapped": false
+  },
+  {
+   "text": "the",
+   "start": 10.735,
+   "end": 10.97,
+   "syllables": [
+    10.853
+   ],
+   "chunk": 5,
+   "snapped": false
+  },
+  {
+   "text": "whole",
+   "start": 10.97,
+   "end": 11.205,
+   "syllables": [
+    11.088
+   ],
+   "chunk": 5,
+   "snapped": false
+  },
+  {
+   "text": "thing",
+   "start": 11.205,
+   "end": 11.44,
+   "syllables": [
+    11.323
+   ],
+   "chunk": 5,
+   "snapped": false
+  },
+  {
+   "text": "Onemarsmedia",
+   "start": 13.24,
+   "end": 14.258,
+   "syllables": [
+    13.342,
+    13.545,
+    13.749,
+    13.953,
+    14.156
+   ],
+   "chunk": 6,
+   "snapped": false
+  },
+  {
+   "text": "pulls",
+   "start": 14.258,
+   "end": 14.462,
+   "syllables": [
+    14.36
+   ],
+   "chunk": 6,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 14.462,
+   "end": 14.665,
+   "syllables": [
+    14.564
+   ],
+   "chunk": 6,
+   "snapped": false
+  },
+  {
+   "text": "into",
+   "start": 14.665,
+   "end": 15.073,
+   "syllables": [
+    14.767,
+    14.971
+   ],
+   "chunk": 6,
+   "snapped": false
+  },
+  {
+   "text": "one",
+   "start": 15.073,
+   "end": 15.276,
+   "syllables": [
+    15.175
+   ],
+   "chunk": 6,
+   "snapped": false
+  },
+  {
+   "text": "line",
+   "start": 15.276,
+   "end": 15.48,
+   "syllables": [
+    15.378
+   ],
+   "chunk": 6,
+   "snapped": false
+  },
+  {
+   "text": "We",
+   "start": 16.88,
+   "end": 17.107,
+   "syllables": [
+    16.993
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "plan",
+   "start": 17.107,
+   "end": 17.333,
+   "syllables": [
+    17.22
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 17.333,
+   "end": 17.56,
+   "syllables": [
+    17.447
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "We",
+   "start": 19.96,
+   "end": 20.24,
+   "syllables": [
+    20.19
+   ],
+   "chunk": 8,
+   "snapped": true
+  },
+  {
+   "text": "shoot",
+   "start": 20.24,
+   "end": 20.4,
+   "syllables": [
+    20.29
+   ],
+   "chunk": 8,
+   "snapped": true
+  },
+  {
+   "text": "it",
+   "start": 20.4,
+   "end": 20.7,
+   "syllables": [
+    20.51
+   ],
+   "chunk": 8,
+   "snapped": true
+  },
+  {
+   "text": "We",
+   "start": 23.1,
+   "end": 23.317,
+   "syllables": [
+    23.208
+   ],
+   "chunk": 9,
+   "snapped": false
+  },
+  {
+   "text": "cut",
+   "start": 23.317,
+   "end": 23.533,
+   "syllables": [
+    23.425
+   ],
+   "chunk": 9,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 23.533,
+   "end": 23.75,
+   "syllables": [
+    23.642
+   ],
+   "chunk": 9,
+   "snapped": false
+  },
+  {
+   "text": "and",
+   "start": 24.1,
+   "end": 24.289,
+   "syllables": [
+    24.195
+   ],
+   "chunk": 10,
+   "snapped": false
+  },
+  {
+   "text": "ship",
+   "start": 24.289,
+   "end": 24.478,
+   "syllables": [
+    24.384
+   ],
+   "chunk": 10,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 24.478,
+   "end": 24.667,
+   "syllables": [
+    24.573
+   ],
+   "chunk": 10,
+   "snapped": false
+  },
+  {
+   "text": "everywhere",
+   "start": 24.667,
+   "end": 25.234,
+   "syllables": [
+    24.762,
+    24.951,
+    25.14
+   ],
+   "chunk": 10,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 25.234,
+   "end": 25.423,
+   "syllables": [
+    25.328
+   ],
+   "chunk": 10,
+   "snapped": false
+  },
+  {
+   "text": "needs",
+   "start": 25.423,
+   "end": 25.612,
+   "syllables": [
+    25.517
+   ],
+   "chunk": 10,
+   "snapped": false
+  },
+  {
+   "text": "to",
+   "start": 25.612,
+   "end": 25.801,
+   "syllables": [
+    25.706
+   ],
+   "chunk": 10,
+   "snapped": false
+  },
+  {
+   "text": "go",
+   "start": 25.801,
+   "end": 25.99,
+   "syllables": [
+    25.895
+   ],
+   "chunk": 10,
+   "snapped": false
+  },
+  {
+   "text": "Thirteen",
+   "start": 28.19,
+   "end": 28.702,
+   "syllables": [
+    28.318,
+    28.574
+   ],
+   "chunk": 11,
+   "snapped": false
+  },
+  {
+   "text": "years",
+   "start": 28.702,
+   "end": 28.959,
+   "syllables": [
+    28.831
+   ],
+   "chunk": 11,
+   "snapped": false
+  },
+  {
+   "text": "of",
+   "start": 28.959,
+   "end": 29.215,
+   "syllables": [
+    29.087
+   ],
+   "chunk": 11,
+   "snapped": false
+  },
+  {
+   "text": "UK",
+   "start": 29.215,
+   "end": 29.471,
+   "syllables": [
+    29.343
+   ],
+   "chunk": 11,
+   "snapped": false
+  },
+  {
+   "text": "production",
+   "start": 29.471,
+   "end": 30.24,
+   "syllables": [
+    29.599,
+    29.856,
+    30.112
+   ],
+   "chunk": 11,
+   "snapped": false
+  },
+  {
+   "text": "For",
+   "start": 30.84,
+   "end": 31.057,
+   "syllables": [
+    30.949
+   ],
+   "chunk": 12,
+   "snapped": false
+  },
+  {
+   "text": "brands",
+   "start": 31.057,
+   "end": 31.274,
+   "syllables": [
+    31.166
+   ],
+   "chunk": 12,
+   "snapped": false
+  },
+  {
+   "text": "like",
+   "start": 31.274,
+   "end": 31.491,
+   "syllables": [
+    31.383
+   ],
+   "chunk": 12,
+   "snapped": false
+  },
+  {
+   "text": "Vogue",
+   "start": 31.491,
+   "end": 31.709,
+   "syllables": [
+    31.6
+   ],
+   "chunk": 12,
+   "snapped": false
+  },
+  {
+   "text": "Arabia",
+   "start": 31.709,
+   "end": 32.36,
+   "syllables": [
+    31.817,
+    32.034,
+    32.251
+   ],
+   "chunk": 12,
+   "snapped": false
+  },
+  {
+   "text": "Adidas",
+   "start": 32.66,
+   "end": 33.33,
+   "syllables": [
+    32.772,
+    32.995,
+    33.218
+   ],
+   "chunk": 13,
+   "snapped": false
+  },
+  {
+   "text": "and",
+   "start": 33.33,
+   "end": 33.553,
+   "syllables": [
+    33.442
+   ],
+   "chunk": 13,
+   "snapped": false
+  },
+  {
+   "text": "ASOS",
+   "start": 33.553,
+   "end": 34.0,
+   "syllables": [
+    33.665,
+    33.888
+   ],
+   "chunk": 13,
+   "snapped": false
+  },
+  {
+   "text": "One",
+   "start": 35.6,
+   "end": 35.92,
+   "syllables": [
+    35.76
+   ],
+   "chunk": 14,
+   "snapped": false
+  },
+  {
+   "text": "team",
+   "start": 35.92,
+   "end": 36.24,
+   "syllables": [
+    36.08
+   ],
+   "chunk": 14,
+   "snapped": false
+  },
+  {
+   "text": "One",
+   "start": 36.74,
+   "end": 36.98,
+   "syllables": [
+    36.87
+   ],
+   "chunk": 15,
+   "snapped": true
+  },
+  {
+   "text": "line",
+   "start": 36.98,
+   "end": 37.33,
+   "syllables": [
+    37.09
+   ],
+   "chunk": 15,
+   "snapped": true
+  },
+  {
+   "text": "Onemarsmedia",
+   "start": 38.13,
+   "end": 39.11,
+   "syllables": [
+    38.228,
+    38.424,
+    38.62,
+    38.816,
+    39.012
+   ],
+   "chunk": 16,
+   "snapped": false
+  }
+ ]
+}
