@@ -6,6 +6,7 @@ import {buildEditorialScene} from './film/editorial/film';
 import {buildReelCoverDarkScene, buildReelCoverScene, buildReelFrameScene, COVER} from './film/editorial/reelCover';
 import {buildOneLineScene} from './film/oneline/film';
 import {buildTimelineScene} from './film/timeline/film';
+import {buildActionScene} from './film/action/film';
 import {loadFonts} from './fonts';
 import {MotionBlur} from './render/MotionBlur';
 import {SceneFrame} from './render/SceneRenderer';
@@ -35,6 +36,7 @@ const reelFrame = buildReelFrameScene();
 const reelCoverDark = buildReelCoverDarkScene();
 const oneLine = buildOneLineScene();
 const timeline = buildTimelineScene();
+const action = buildActionScene();
 const testMain = test.comps[test.main];
 
 export const Root: React.FC = () => (
@@ -59,6 +61,7 @@ export const Root: React.FC = () => (
     />
     <Composition id="OneLine" component={SceneComp} durationInFrames={oneLine.comps[oneLine.main].duration} fps={60} width={1920} height={1080} defaultProps={{scene: oneLine}} />
     <Composition id="Timeline" component={SceneComp} durationInFrames={timeline.comps[timeline.main].duration} fps={60} width={1920} height={1080} defaultProps={{scene: timeline}} />
+    <Composition id="ActionTaker" component={SceneComp} durationInFrames={action.comps[action.main].duration} fps={60} width={1080} height={1920} defaultProps={{scene: action}} />
     <Composition id="TilesAnim" component={SceneComp} durationInFrames={tilesAnim.comps[tilesAnim.main].duration} fps={60} width={1920} height={1080} defaultProps={{scene: tilesAnim}} />
     <Composition id="ReelCover" component={SceneComp} durationInFrames={reelCover.comps[reelCover.main].duration} fps={60} width={COVER.w} height={COVER.h} defaultProps={{scene: reelCover}} />
     <Composition id="ReelCoverDark" component={SceneComp} durationInFrames={reelCoverDark.comps[reelCoverDark.main].duration} fps={60} width={COVER.w} height={COVER.h} defaultProps={{scene: reelCoverDark}} />
