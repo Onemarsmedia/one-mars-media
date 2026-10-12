@@ -11,8 +11,11 @@ import vo from './vo.json';
 // (the last frame repeats the layout of the first, so it loops).
 
 export const FPS = 60;
-const W = 1920;
-const H = 1080;
+// The film is built in two layouts from the same timing: 16:9 and a separate 9:16 (not a crop).
+// The builders read the current layout from these (set at the top of buildOneLineScene).
+let W = 1920;
+let H = 1080;
+let V = false;
 const f = (s: number) => Math.round(s * FPS);
 
 const E: Record<'scene' | 'in' | 'out' | 'pop', Bezier> = {
@@ -52,7 +55,7 @@ export const T = {
   end: ch[16].end,
 };
 export const DURATION = f(Math.ceil(T.end + 2.6));
-const SWEEP = {t0: T.pull - 0.35, t1: T.pull + 1.1, x1: 260}; // the line sweeps right to left, chaos to order
+const SWEEP = {t0: T.pull - 0.35, t1: T.pull + 1.1, x1: 260}; // x1 = WIN.x of the layout // the line sweeps right to left, chaos to order
 
 // ------------------------------------------------------------------ builders
 const rect = (x: number, y: number, w: number, h: number, color: string, opacity = 100, r = 0): ShapeItem => ({
@@ -215,24 +218,26 @@ function chaosComps(): Comp[] {
     ]),
   ];
 }
-const CHAOS = [
-  {comp: 'CARD AGENCY', c: [560, 360] as Vec2, w: 440, h: 250, rot: -4, t: T.agency + 0.05},
-  {comp: 'CARD CREW', c: [1350, 300] as Vec2, w: 420, h: 240, rot: 3, t: T.crew + 0.05},
-  {comp: 'CARD EDITOR', c: [700, 770] as Vec2, w: 440, h: 230, rot: 2.5, t: T.editor + 0.05},
-  {comp: 'CARD DESIGNER', c: [1400, 720] as Vec2, w: 420, h: 240, rot: -3, t: T.designer + 0.05},
+const chaos = () => [
+  {comp: 'CARD AGENCY', c: (V ? [330, 580] : [560, 360]) as Vec2, w: 440, h: 250, rot: -4, t: T.agency + 0.05},
+  {comp: 'CARD CREW', c: (V ? [750, 820] : [1350, 300]) as Vec2, w: 420, h: 240, rot: 3, t: T.crew + 0.05},
+  {comp: 'CARD EDITOR', c: (V ? [330, 1080] : [700, 770]) as Vec2, w: 440, h: 230, rot: 2.5, t: T.editor + 0.05},
+  {comp: 'CARD DESIGNER', c: (V ? [750, 1320] : [1400, 720]) as Vec2, w: 420, h: 240, rot: -3, t: T.designer + 0.05},
 ];
-const PILLS: Array<[string, Vec2, number]> = [
-  ["Where's the latest cut?", [1040, 170], T.agency + 0.9],
-  ['3 new comments', [300, 600], T.editor + 0.5],
-  ['Invoice overdue', [1180, 905], T.designer + 0.7],
-  ['Who has the brief?', [1590, 520], T.nobody - 0.4],
+const pills = (): Array<[string, Vec2, number]> => [
+  ["Where's the latest cut?", V ? [720, 410] : [1040, 170], T.agency + 0.9],
+  ['3 new comments', V ? [300, 850] : [300, 600], T.editor + 0.5],
+  ['Invoice overdue', V ? [330, 1420] : [1180, 905], T.designer + 0.7],
+  ['Who has the brief?', V ? [700, 1530] : [1590, 520], T.nobody - 0.4],
 ];
 
 function beforeComp(): Comp {
   const layers: Layer[] = [];
   const tEnd = SWEEP.t1;
   // the tangle: the line threads through every supplier (behind the cards)
-  const P: Vec2[] = [
+  const P: Vec2[] = V
+    ? [[700, 1000], [520, 840], [330, 660], [560, 450], [760, 620], [900, 840], [700, 920], [420, 1000], [250, 1150], [330, 1310], [560, 1200], [760, 1320], [900, 1450], [640, 1500], [420, 1400], [540, 1100], [540, 960]]
+    : [
     [1532, 590],
     [1240, 520],
     [760, 400],
@@ -275,8 +280,8 @@ function beforeComp(): Comp {
     ),
   );
   // the suppliers pile up, then drift apart and dim as "nobody holds the whole thing"
-  CHAOS.forEach((k, i) => {
-    const drift: Vec2 = [k.c[0] + (k.c[0] < 960 ? -40 : 40), k.c[1] + (k.c[1] < 540 ? -24 : 24)];
+  chaos().forEach((k, i) => {
+    const drift: Vec2 = [k.c[0] + (k.c[0] < W / 2 ? -40 : 40), k.c[1] + (k.c[1] < H / 2 ? -24 : 24)];
     layers.push({
       kind: 'precomp',
       name: k.comp,
@@ -294,7 +299,7 @@ function beforeComp(): Comp {
     });
   });
   // notifications pop in on top
-  PILLS.forEach(([s, c, t], i) => {
+  pills().forEach(([s, c, t], i) => {
     const w = 64 + s.length * 11.2;
     layers.push({
       kind: 'shape',
@@ -306,17 +311,25 @@ function beforeComp(): Comp {
     layers.push({...txt(`pill ${i + 1} text`, s, c[0] - w / 2 + 48, c[1] + 7, 'sg600', 19, TXT), transform: {position: [c[0] - w / 2 + 48, c[1] + 7], opacity: {keys: [key(f(t + 0.1), 0, 'linear'), key(f(t + 0.25), 100, 'linear'), key(f(T.nobody + 0.3), 100, E.out), key(f(T.nobody + 0.9), 30)]}}, in: f(t)});
   });
   // the problem, said once
-  const nb = 'Nobody holds the whole thing.';
-  layers.push(lifeLayer({...txt('nobody', nb, (W - 841.3) / 2, 560, 'sg800', 56, TXT), transform: life([(W - 841.3) / 2, 560], T.nobody + 0.15)}, T.nobody + 0.15));
+  if (V) {
+    layers.push(lifeLayer({...txt('nobody', 'Nobody holds\nthe whole thing.', W / 2, 930, 'sg800', 84, TXT, {justify: 'center', leading: 100, tracking: track(-1.5, 84)}), transform: life([W / 2, 930], T.nobody + 0.15)}, T.nobody + 0.15));
+  } else {
+    const nb = 'Nobody holds the whole thing.';
+    layers.push(lifeLayer({...txt('nobody', nb, (W - 841.3) / 2, 560, 'sg800', 56, TXT), transform: life([(W - 841.3) / 2, 560], T.nobody + 0.15)}, T.nobody + 0.15));
+  }
   return {name: 'BEFORE', width: W, height: H, fps: FPS, duration: DURATION, layers: layers.map((l) => ({...l, out: l.out ?? f(tEnd + 0.1)}))};
 }
 
 // ------------------------------------------------------------------ after: one project window, three steps
-const WIN = {x: 260, y: 170, w: 1400, h: 700};
+let WIN = {x: 260, y: 170, w: 1400, h: 700};
+const WIN_H = {x: 260, y: 170, w: 1400, h: 700};
+const WIN_V = {x: 70, y: 300, w: 940, h: 1260};
+// 16:9: three cards in a row, callouts above the window. 9:16: a zigzag down the window (cards at 85 %),
+// the callouts branch sideways across the vertical timeline in the middle.
 const STEP = [
-  {name: 'PLAN', n: '01', cx: 520, t: T.plan, callout: 'Storyboard, signed off.'},
-  {name: 'SHOOT', n: '02', cx: 960, t: T.shoot, callout: 'One crew. One shoot day.'},
-  {name: 'DELIVER', n: '03', cx: 1400, t: T.cut, callout: 'Cut once. Ship everywhere.'},
+  {name: 'PLAN', n: '01', cx: 520, t: T.plan, callout: 'Storyboard, signed off.', v: [330, 600] as Vec2, vText: 'Storyboard,\nsigned off.'},
+  {name: 'SHOOT', n: '02', cx: 960, t: T.shoot, callout: 'One crew. One shoot day.', v: [750, 960] as Vec2, vText: 'One crew.\nOne shoot day.'},
+  {name: 'DELIVER', n: '03', cx: 1400, t: T.cut, callout: 'Cut once. Ship everywhere.', v: [330, 1320] as Vec2, vText: 'Cut once.\nShip everywhere.'},
 ];
 const CARD_W = 400;
 const CARD_H = 430;
@@ -392,12 +405,14 @@ function afterComp(): Comp {
   const y0 = WIN.y;
   const x1 = WIN.x + WIN.w;
   const y1 = WIN.y + WIN.h;
-  const ym = 540;
+  const ym = H / 2;
   const framePts: Vec2[] = [[x0, ym], [x0, y0 + r], [x0 + r * 0.3, y0 + r * 0.3], [x0 + r, y0], [x1 - r, y0], [x1 - r * 0.3, y0 + r * 0.3], [x1, y0 + r], [x1, y1 - r], [x1 - r * 0.3, y1 - r * 0.3], [x1 - r, y1], [x0 + r, y1], [x0 + r * 0.3, y1 - r * 0.3], [x0, y1 - r], [x0, ym]];
   layers.push(...line('window', framePts, [[tWin - 0.05, 0, E.scene], [tWin + 1.0, 100, 'linear']], [[tOut, 0, E.out], [tOut + 0.5, 100, 'linear']], {width: 3, outT: tOut + 0.55}));
   // the three steps; each one in turn: lift -> focus -> callout
+  const CS = V ? 85 : 100; // card scale
+  const sc = (k: number) => [CS * k, CS * k] as Vec2;
   STEP.forEach((s, i) => {
-    const c: Vec2 = [s.cx, CARD_Y];
+    const c: Vec2 = V ? s.v : [s.cx, CARD_Y];
     const tin = tCards + i * 0.07;
     const focusOn = s.t - 0.1;
     const next = i < 2 ? STEP[i + 1].t - 0.1 : T.years - 1.1;
@@ -414,27 +429,39 @@ function afterComp(): Comp {
       transform: {
         anchor: [CARD_W / 2, CARD_H / 2],
         position: {keys: [key(f(tin), [c[0], c[1] + 36] as Vec2, E.in), key(f(tin + 0.55), c)]},
-        scale: {keys: [key(f(focusOn), [100, 100] as Vec2, E.pop), key(f(focusOn + 0.45), [104, 104] as Vec2, 'linear'), key(f(next), [104, 104] as Vec2, E.scene), key(f(next + 0.4), [100, 100] as Vec2)]},
+        scale: {keys: [key(f(focusOn), sc(1), E.pop), key(f(focusOn + 0.45), sc(1.04), 'linear'), key(f(next), sc(1.04), E.scene), key(f(next + 0.4), sc(1))]},
         opacity: {keys: op},
       },
       in: f(tin),
       out: f(tOut + 0.55),
     });
     // callout: the line rises from the card to a short caption, a dot at its end
+    // (9:16: it leaves the card sideways, to the free side of the zigzag)
     const top = CARD_Y - CARD_H / 2 - 12;
     const cy = WIN.y - 46;
-    const cpts: Vec2[] = [[s.cx, top], [s.cx, cy + 22], [s.cx + 18, cy]];
+    const side = c[0] < W / 2 ? 1 : -1;
+    const ex = V ? c[0] + side * ((CARD_W * CS) / 200 + 12) : 0;
+    const vy = c[1] - 90;
+    const cpts: Vec2[] = V ? [[ex, vy], [W / 2 + side * 60, vy]] : [[s.cx, top], [s.cx, cy + 22], [s.cx + 18, cy]];
+    const dp: Vec2 = V ? [W / 2 + side * 60, vy] : [s.cx + 18, cy];
     layers.push(...line(`callout ${s.name}`, cpts, [[focusOn + 0.15, 0, E.in], [focusOn + 0.65, 100, 'linear']], [[next - 0.1, 0, E.out], [next + 0.25, 100, 'linear']], {width: 3}));
-    layers.push({kind: 'shape', name: `callout ${s.name} dot`, items: [dot([s.cx + 18, cy], 7, RED)], transform: {anchor: [s.cx + 18, cy], position: [s.cx + 18, cy], scale: {keys: [key(f(focusOn + 0.6), [0, 0] as Vec2, E.pop), key(f(focusOn + 0.9), [100, 100] as Vec2, 'linear'), key(f(next - 0.1), [100, 100] as Vec2, E.out), key(f(next + 0.2), [0, 0] as Vec2)]}}, in: f(focusOn + 0.6), out: f(next + 0.25)});
-    layers.push(lifeLayer({...txt(`callout ${s.name} text`, s.callout, s.cx + 36, cy + 10, 'sg700', 30, TXT), transform: life([s.cx + 36, cy + 10], focusOn + 0.65, next - 0.15, 10, 0.45)}, focusOn + 0.65, next - 0.15));
+    layers.push({kind: 'shape', name: `callout ${s.name} dot`, items: [dot(dp, 7, RED)], transform: {anchor: dp, position: dp, scale: {keys: [key(f(focusOn + 0.6), [0, 0] as Vec2, E.pop), key(f(focusOn + 0.9), [100, 100] as Vec2, 'linear'), key(f(next - 0.1), [100, 100] as Vec2, E.out), key(f(next + 0.2), [0, 0] as Vec2)]}}, in: f(focusOn + 0.6), out: f(next + 0.25)});
+    if (V) {
+      const tp: Vec2 = [dp[0] + side * 20, vy + 11];
+      layers.push(lifeLayer({...txt(`callout ${s.name} text`, s.vText, tp[0], tp[1], 'sg700', 32, TXT, {justify: side > 0 ? 'left' : 'right', leading: 40}), transform: life(tp, focusOn + 0.65, next - 0.15, 10, 0.45)}, focusOn + 0.65, next - 0.15));
+    } else {
+      layers.push(lifeLayer({...txt(`callout ${s.name} text`, s.callout, s.cx + 36, cy + 10, 'sg700', 30, TXT), transform: life([s.cx + 36, cy + 10], focusOn + 0.65, next - 0.15, 10, 0.45)}, focusOn + 0.65, next - 0.15));
+    }
   });
   // the timeline under the cards fills as the steps go: the line as a progress bar
   const tlY = WIN.y + WIN.h - 50;
-  layers.push({kind: 'shape', name: 'timeline track', items: [rect(WIN.x + 60, tlY, WIN.w - 120, 4, TXT, 12, 2)], transform: {opacity: {keys: [key(f(tCards), 0, E.in), key(f(tCards + 0.5), 100), ...outKeys(100)]}}, in: f(tCards), out: f(tOut + 0.55)});
+  const tlA: Vec2 = V ? [W / 2, WIN.y + 110] : [WIN.x + 60, tlY + 2];
+  const tlB: Vec2 = V ? [W / 2, WIN.y + WIN.h - 50] : [WIN.x + WIN.w - 60, tlY + 2];
+  layers.push({kind: 'shape', name: 'timeline track', items: [V ? rect(W / 2 - 2, tlA[1], 4, tlB[1] - tlA[1], TXT, 12, 2) : rect(WIN.x + 60, tlY, WIN.w - 120, 4, TXT, 12, 2)], transform: {opacity: {keys: [key(f(tCards), 0, E.in), key(f(tCards + 0.5), 100), ...outKeys(100)]}}, in: f(tCards), out: f(tOut + 0.55)});
   layers.push(
     ...line(
       'timeline',
-      [[WIN.x + 60, tlY + 2], [WIN.x + WIN.w - 60, tlY + 2]],
+      [tlA, tlB],
       [[T.plan - 0.1, 0, E.scene], [T.shoot - 0.1, 33, E.scene], [T.cut - 0.1, 66, E.scene], [T.ship + 1.0, 100, 'linear']],
       [[tOut, 0, E.out], [tOut + 0.5, 100, 'linear']],
       {width: 4, outT: tOut + 0.55},
@@ -444,7 +471,11 @@ function afterComp(): Comp {
 }
 
 // ------------------------------------------------------------------ main
-export function buildOneLineScene(): Scene {
+export function buildOneLineScene(vertical = false): Scene {
+  V = vertical;
+  W = V ? 1080 : 1920;
+  H = V ? 1920 : 1080;
+  WIN = V ? WIN_V : WIN_H;
   const comps: Record<string, Comp> = {};
   const add = (c: Comp) => (comps[c.name] = c);
   chaosComps().forEach(add);
@@ -461,7 +492,26 @@ export function buildOneLineScene(): Scene {
   // camera rides the line: pushes into each card, flies between them, rolls into the turns, pulls out
   // to show the whole picture. CAMERA = zoom + roll at the screen centre, PAN = -centre.
   type Cam = [number, Vec2, number, number]; // time, page point at screen centre, zoom %, roll deg
-  const CAMS: Cam[] = [
+  const CAMS: Cam[] = V ? [
+    [0, [560, 990], 122, -1.5],
+    [T.hook + 1.1, [545, 1000], 130, 0],
+    [T.agency + 0.15, [330, 560], 140, 2],
+    [T.crew - 0.05, [740, 790], 140, -2],
+    [T.editor + 0.3, [350, 1060], 138, 1.5],
+    [T.designer + 0.35, [740, 1300], 140, -1.5],
+    [T.nobody + 0.25, [540, 960], 104, 0],
+    [SWEEP.t0, [540, 960], 106, 0],
+    [SWEEP.t1, [540, 940], 100, 0],
+    [T.plan - 0.15, [470, 590], 126, 1],
+    [T.shoot - 0.15, [600, 930], 126, -1],
+    [T.cut - 0.15, [470, 1290], 126, 1],
+    [T.ship + 0.9, [540, 940], 104, 0],
+    [T.years - 0.3, [420, 820], 122, -1],
+    [T.brands + 0.4, [540, 1120], 112, 0],
+    [T.team - 0.3, [540, 960], 116, 0],
+    [T.name - 0.1, [540, 990], 110, 0],
+    [DURATION / FPS, [540, 990], 100, 0],
+  ] : [
     [0, [1000, 560], 128, -1.5],
     [T.hook + 1.1, [1250, 575], 150, 0],
     [T.agency + 0.15, [640, 380], 135, 2],
@@ -488,14 +538,17 @@ export function buildOneLineScene(): Scene {
 
   const scene: Layer[] = [];
   // 1. hook
-  const hookX = (W - 1199.4) / 2;
-  scene.push(lifeLayer({...txt('hook', 'Your launch has a brief.', hookX, 560, 'sg800', 104, TXT, {tracking: track(-2, 104)}), transform: life([hookX, 560], 0.1, T.agency - 0.5, 22, 0.5)}, 0.1, T.agency - 0.5));
-  const ulY = 600;
-  const bx0 = hookX + 922.6;
-  const bx1 = hookX + 1199.4 - 26;
+  // (9:16: two lines, and on screen from frame 1 so the first frame reads without sound)
+  const hookX = V ? (W - 702.6) / 2 : (W - 1199.4) / 2;
+  const hookY = V ? 900 : 560;
+  const hookIn = V ? -0.6 : 0.1;
+  scene.push(lifeLayer({...txt('hook', V ? 'Your launch\nhas a brief.' : 'Your launch has a brief.', hookX, hookY, 'sg800', V ? 124 : 104, TXT, {tracking: track(-2, 104), leading: 140}), transform: life([hookX, hookY], hookIn, T.agency - 0.5, 22, 0.5)}, hookIn, T.agency - 0.5));
+  const ulY = V ? 1084 : 600;
+  const bx0 = V ? hookX + 332.9 : hookX + 922.6;
+  const bx1 = V ? hookX + 648.6 - 26 : hookX + 1199.4 - 26;
   scene.push(...line('hook', [[-30, ulY], [bx1, ulY]], [[0.2, 0, E.scene], [T.hook + 1.0, 100, 'linear']], [[0.2, 0, E.scene], [T.hook + 1.0, 0, E.scene], [T.hook + 1.3, ((bx0 + 30) / (bx1 + 30)) * 100, E.scene], [T.agency - 0.55, ((bx0 + 30) / (bx1 + 30)) * 100, E.scene], [T.agency - 0.1, 100, 'linear']]));
   // 2-3. before | after, split by the line as it sweeps
-  const lineX: Prop<Vec2> = {keys: [key(f(SWEEP.t0), [W + 12, 0] as Vec2, E.scene), key(f(SWEEP.t1), [SWEEP.x1, 0] as Vec2)]};
+  const lineX: Prop<Vec2> = {keys: [key(f(SWEEP.t0), [W + 12, 0] as Vec2, E.scene), key(f(SWEEP.t1), [WIN.x, 0] as Vec2)]};
   const matte = (name: string): Layer => ({kind: 'shape', name, matteSource: true, items: [rect(0, -200, W + 400, H + 400, '#FFFFFF')], transform: {anchor: [0, 0], position: lineX}, in: f(SWEEP.t0), out: f(SWEEP.t1 + 0.2)});
   scene.push({kind: 'precomp', name: 'BEFORE', comp: 'BEFORE', collapse: true, out: f(SWEEP.t0)});
   scene.push(matte('before matte'), {kind: 'precomp', name: 'BEFORE (wiped)', comp: 'BEFORE', collapse: true, matte: {layer: 'before matte', type: 'alphaInverted'}, in: f(SWEEP.t0), out: f(SWEEP.t1 + 0.2)});
@@ -506,7 +559,7 @@ export function buildOneLineScene(): Scene {
     kind: 'shape',
     name: 'line sweep',
     items: [{geo: {type: 'path', path: {v: [[0, -20], [0, H + 20]], closed: false}}, stroke: {color: RED, width: LINE_W, cap: 'round'}, trim: {start: trimProp([[SWEEP.t0, 50, E.scene], [SWEEP.t0 + 0.45, 0, 'linear'], [SWEEP.t1, 0, E.scene], [SWEEP.t1 + 0.35, 50, 'linear']]), end: trimProp([[SWEEP.t0, 50, E.scene], [SWEEP.t0 + 0.45, 100, 'linear'], [SWEEP.t1, 100, E.scene], [SWEEP.t1 + 0.35, 50, 'linear']])}}],
-    transform: {anchor: [0, 0], position: {keys: [key(f(SWEEP.t0), [W + 12, 0] as Vec2, E.scene), key(f(SWEEP.t1), [SWEEP.x1, 0] as Vec2)]}},
+    transform: {anchor: [0, 0], position: {keys: [key(f(SWEEP.t0), [W + 12, 0] as Vec2, E.scene), key(f(SWEEP.t1), [WIN.x, 0] as Vec2)]}},
     in: f(SWEEP.t0),
     out: f(SWEEP.t1 + 0.4),
     label: 1,
@@ -514,36 +567,46 @@ export function buildOneLineScene(): Scene {
 
   // 4. proof: the timeline becomes a rising chart; 13 years; the brands, text only
   const tP = T.years - 0.55;
-  const chart: Vec2[] = [[WIN.x + 60, 870], [560, 960], [760, 945], [900, 900], [1020, 912], [1140, 820], [1280, 808], [1400, 690], [1540, 650], [1660, 480]];
+  const chart: Vec2[] = V
+    ? [[110, 1530], [250, 1556], [370, 1540], [470, 1496], [570, 1506], [670, 1430], [770, 1420], [850, 1330], [920, 1300], [990, 1170]]
+    : [[WIN.x + 60, 870], [560, 960], [760, 945], [900, 900], [1020, 912], [1140, 820], [1280, 808], [1400, 690], [1540, 650], [1660, 480]];
+  const PX = V ? 90 : 270; // left edge of the proof block
+  const PY = V ? 180 : 0; // and how far it sits below the 16:9 one
   scene.push(...line('chart', chart, [[tP, 0, E.scene], [tP + 1.8, 100, 'linear']], [[T.team - 0.65, 0, E.out], [T.team - 0.3, 100, 'linear']], {width: 4}));
   const yearsKeys: Prop<number> = {keys: [key(f(T.years), 0, [0.25, 0.1, 0.25, 1]), key(f(T.years + 1.6), 13)]};
-  scene.push(lifeLayer({kind: 'text', name: 'years counter', source: {kind: 'counter', value: yearsKeys, pad: 1}, font: FONT.anton, size: 360, color: TXT, transform: life([260, 640], T.years - 0.05, T.team - 0.65, 24, 0.6)}, T.years - 0.05, T.team - 0.65));
-  scene.push(lifeLayer({...txt('years label', 'years of UK production', 270, 720, 'sg700', 44, TXT), transform: life([270, 720], T.years + 0.25, T.team - 0.65, 16, 0.55)}, T.years + 0.25, T.team - 0.65));
+  scene.push(lifeLayer({kind: 'text', name: 'years counter', source: {kind: 'counter', value: yearsKeys, pad: 1}, font: FONT.anton, size: 360, color: TXT, transform: life([PX - 10, 640 + PY], T.years - 0.05, T.team - 0.65, 24, 0.6)}, T.years - 0.05, T.team - 0.65));
+  scene.push(lifeLayer({...txt('years label', 'years of UK production', PX, 720 + PY, 'sg700', 44, TXT), transform: life([PX, 720 + PY], T.years + 0.25, T.team - 0.65, 16, 0.55)}, T.years + 0.25, T.team - 0.65));
   const brands: Array<[string, number, number]> = [['Vogue Arabia', 299.8, T.brands + 0.75], ['Adidas', 157.1, T.adidas - 0.05], ['ASOS', 129.9, T.adidas + 0.45]];
   const gap = 64;
-  let bx = 270;
-  scene.push(lifeLayer({...txt('brands label', 'FOR BRANDS LIKE', 270, 830, 'sg800', 18, MUTE, {tracking: track(2.6, 18)}), transform: life([270, 830], T.brands + 0.1, T.team - 0.65, 10, 0.5)}, T.brands + 0.1, T.team - 0.65));
+  let bx = PX;
+  scene.push(lifeLayer({...txt('brands label', 'FOR BRANDS LIKE', PX, 830 + PY, 'sg800', 18, MUTE, {tracking: track(2.6, 18)}), transform: life([PX, 830 + PY], T.brands + 0.1, T.team - 0.65, 10, 0.5)}, T.brands + 0.1, T.team - 0.65));
   brands.forEach(([s, w, t], i) => {
-    scene.push(lifeLayer({...txt(`brand ${s}`, s, bx, 892, 'sg700', 46, TXT), transform: life([bx, 892], t, T.team - 0.65, 14, 0.5)}, t, T.team - 0.65));
-    if (i < 2) scene.push(lifeLayer({kind: 'shape', name: `brand dot ${i + 1}`, items: [dot([bx + w + gap / 2, 876], 5, RED)], transform: life([0, 0], t + 0.2, T.team - 0.65, 0, 0.3)}, t + 0.2, T.team - 0.65));
+    scene.push(lifeLayer({...txt(`brand ${s}`, s, bx, 892 + PY, 'sg700', 46, TXT), transform: life([bx, 892 + PY], t, T.team - 0.65, 14, 0.5)}, t, T.team - 0.65));
+    if (i < 2) scene.push(lifeLayer({kind: 'shape', name: `brand dot ${i + 1}`, items: [dot([bx + w + gap / 2, 876 + PY], 5, RED)], transform: life([0, 0], t + 0.2, T.team - 0.65, 0, 0.3)}, t + 0.2, T.team - 0.65));
     bx += w + gap;
   });
 
   // 5. sign-off in the hook's layout: "One team. One line." then the name, underlined (loops to frame 1)
-  const sX = (W - 998) / 2;
-  scene.push(lifeLayer({...txt('one team', 'One team.', sX, 560, 'sg800', 104, TXT, {tracking: track(-2, 104)}), transform: life([sX, 560], T.team - 0.05, T.name - 0.35, 22, 0.55)}, T.team - 0.05, T.name - 0.35));
-  scene.push(lifeLayer({...txt('one line', 'One line.', sX + 545.7, 560, 'sg800', 104, TXT, {tracking: track(-2, 104)}), transform: life([sX + 545.7, 560], T.line - 0.05, T.name - 0.35, 22, 0.55)}, T.line - 0.05, T.name - 0.35));
-  const lx0 = sX + 545.7;
-  const lx1 = sX + 998 - 26;
-  const olPts: Vec2[] = [[1660, 480], [1580, 540], [lx0 - 40, ulY], [lx1, ulY]];
+  // (9:16: stacked on two lines, in the hook's place)
+  const sX = V ? (W - 605.3) / 2 : (W - 998) / 2;
+  const SZ = V ? 124 : 104;
+  const l2: Vec2 = V ? [sX, 1040] : [sX + 545.7, 560];
+  scene.push(lifeLayer({...txt('one team', 'One team.', sX, V ? 900 : 560, 'sg800', SZ, TXT, {tracking: track(-2, 104)}), transform: life([sX, V ? 900 : 560], T.team - 0.05, T.name - 0.35, 22, 0.55)}, T.team - 0.05, T.name - 0.35));
+  scene.push(lifeLayer({...txt('one line', 'One line.', l2[0], l2[1], 'sg800', SZ, TXT, {tracking: track(-2, 104)}), transform: life(l2, T.line - 0.05, T.name - 0.35, 22, 0.55)}, T.line - 0.05, T.name - 0.35));
+  const lx0 = l2[0];
+  const lx1 = V ? sX + 517.8 - 26 : sX + 998 - 26;
+  const chartEnd = chart[chart.length - 1];
+  const olPts: Vec2[] = [chartEnd, [chartEnd[0] - 80, chartEnd[1] + (V ? -40 : 60)], [lx0 - 40, ulY], [lx1, ulY]];
   const olAcc = lengths(olPts);
   const olKeep = (olAcc[2] / olAcc[3]) * 100; // what stays: the underline under "One line."
   scene.push(...line('one line', olPts, [[T.line - 0.25, 0, E.scene], [T.line + 0.5, 100, 'linear']], [[T.line - 0.25, 0, E.scene], [T.line + 0.5, olKeep, E.scene], [T.name - 0.25, olKeep, E.scene], [T.name + 0.2, 100, 'linear']]));
-  const nX = (W - 1150.8) / 2;
-  scene.push(lifeLayer({...txt('wordmark', 'Onemarsmedia', nX, 560, 'sg800', 150, TXT, {tracking: track(-3, 150)}), transform: life([nX, 560], T.name - 0.1, undefined, 26, 0.7)}, T.name - 0.1));
-  const nulY = 610;
-  scene.push(...line('name', [[nX + 4, nulY], [nX + 1150.8 - 30, nulY]], [[T.name, 50, E.scene], [T.name + 0.9, 100, 'linear']], [[T.name, 50, E.scene], [T.name + 0.9, 0, 'linear']], {tip: false, outT: 43}));
-  scene.push(lifeLayer({...txt('url', 'onemarsmedia.com', W / 2, 690, 'sg600', 34, MUTE, {justify: 'center'}), transform: life([W / 2, 690], T.name + 0.7, undefined, 12, 0.55)}, T.name + 0.7));
+  const NW = V ? 921.6 : 1150.8; // wordmark width
+  const nX = (W - NW) / 2;
+  const nY = V ? 1000 : 560;
+  scene.push(lifeLayer({...txt('wordmark', 'Onemarsmedia', nX, nY, 'sg800', V ? 124 : 150, TXT, {tracking: track(-3, 150)}), transform: life([nX, nY], T.name - 0.1, undefined, 26, 0.7)}, T.name - 0.1));
+  const nulY = V ? 1042 : 610;
+  scene.push(...line('name', [[nX + 4, nulY], [nX + NW - 30, nulY]], [[T.name, 50, E.scene], [T.name + 0.9, 100, 'linear']], [[T.name, 50, E.scene], [T.name + 0.9, 0, 'linear']], {tip: false, outT: 43}));
+  scene.push(lifeLayer({...txt('url', 'onemarsmedia.com', W / 2, nY + 130, 'sg600', 34, MUTE, {justify: 'center'}), transform: life([W / 2, nY + 130], T.name + 0.7, undefined, 12, 0.55)}, T.name + 0.7));
 
   L.push(...scene.map(inCam));
 
@@ -551,11 +614,12 @@ export function buildOneLineScene(): Scene {
   const words = (vo as {words: Array<{text: string; start: number}>}).words;
   const wt = (w: string) => words.find((x) => x.text.replace(/[^A-Za-z]/g, '').toLowerCase() === w)!.start;
   const KIN: Array<[string, number]> = [['Agency', wt('agency')], ['Crew', wt('crew')], ['Editor', wt('editor')], ['Designer', wt('designer')]];
-  KIN.forEach(([s, t], i) => {
+  // (16:9 only: in 9:16 the word-by-word captions carry these words, and the top band belongs to the cards)
+  if (!V) KIN.forEach(([s, t], i) => {
     const nextT = i < KIN.length - 1 ? KIN[i + 1][1] : t + 1;
     const tout = Math.min(nextT - 0.04, t + 0.9);
-    const x = 110;
-    const y = 975;
+    const x = V ? 80 : 110; // 9:16: the top band, the captions own the bottom
+    const y = V ? 330 : 975;
     const tin = t - 0.04;
     L.push({
       ...txt(`kinetic ${s}`, s + '.', x, y, 'sg800', 132, TXT, {tracking: track(-3, 132)}),
@@ -569,16 +633,72 @@ export function buildOneLineScene(): Scene {
     });
   });
 
-  // watermark: the whole film, bottom centre, one line (blueprint section 9)
+  if (V) L.push(...captionLayers());
+
+  // watermark: the whole film, bottom centre, 26 px at 85 % on a dark band (master blueprint v1.3);
+  // 9:16 on two lines
+  const wmH = V ? 150 : 76;
+  L.push({kind: 'shape', name: 'watermark band', items: [rect(0, H - wmH, W, wmH, BG, 78)], label: 16});
   L.push({
-    ...txt('watermark', 'Directed & produced by Marek Mars · Onemarsmedia Limited · onemarsmedia.com', W / 2, H - 34, 'sg600', 18, TXT, {justify: 'center'}),
-    transform: {position: [W / 2, H - 34], opacity: 70},
+    ...(V
+      ? txt('watermark', 'Directed & produced by Marek Mars\nOnemarsmedia Limited · onemarsmedia.com', W / 2, H - 92, 'sg600', 26, TXT, {justify: 'center', leading: 38})
+      : txt('watermark', 'Directed & produced by Marek Mars · Onemarsmedia Limited · onemarsmedia.com', W / 2, H - 30, 'sg600', 26, TXT, {justify: 'center'})),
+    transform: {position: [W / 2, V ? H - 92 : H - 30], opacity: 85},
     label: 16,
   });
 
-  const main: Comp = {name: 'One line', width: W, height: H, fps: FPS, duration: DURATION, bg: BG, motionBlur: {shutterAngle: 180, samples: 8}, layers: L};
+  const main: Comp = {name: V ? 'One line 9x16' : 'One line', width: W, height: H, fps: FPS, duration: DURATION, bg: BG, motionBlur: {shutterAngle: 180, samples: 8}, layers: L};
   add(main);
   return {main: main.name, comps, fonts: Object.values(FONT)};
+}
+
+// ------------------------------------------------------------------ 9:16 captions
+// Word by word, synced to the VO, in a band above the watermark. Words come from the script (with its
+// punctuation) matched in order to the aligned words. Off where the screen already says the same thing
+// (the hook, "nobody holds the whole thing", the proof and the sign-off).
+const scriptText = `Your launch has a brief.
+Then it gets an agency, a crew, an editor, a designer. And nobody holds the whole thing.
+Onemarsmedia pulls it into one line.
+We plan it. We shoot it. We cut it, and ship it everywhere it needs to go.
+Thirteen years of UK production. For brands like Vogue Arabia, Adidas and ASOS.
+One team. One line. Onemarsmedia.`; // assets/audio/oneline/script.txt
+const CAPTION_GROUPS = [[1], [2, 3, 4], [6], [7], [8], [9], [10]];
+function captionLayers(): Layer[] {
+  const words = (vo as {words: Array<{text: string; start: number; end: number}>}).words;
+  const tokens = scriptText.split(/\s+/).filter(Boolean);
+  if (tokens.length !== words.length) throw new Error(`captions: ${tokens.length} script words vs ${words.length} aligned`);
+  const inChunk = (c: Chunk) => words.map((w, i) => ({w, tok: tokens[i]})).filter(({w}) => w.start >= c.start - 0.02 && w.start < c.end - 0.01);
+  const keys: Key<string>[] = [key(0, '', 'hold')];
+  const band: Key<number>[] = [key(0, 0, 'hold')];
+  CAPTION_GROUPS.forEach((g, gi) => {
+    const ws = g.flatMap((ci) => inChunk(ch[ci]));
+    const full = ws.map((x) => x.tok).join(' ');
+    // two lines when long: break at the space nearest the middle
+    let brk = ws.length;
+    if (full.length > 24) {
+      let best = 1;
+      for (let k = 1; k < ws.length; k++) {
+        const left = ws.slice(0, k).map((x) => x.tok).join(' ').length;
+        const bl = ws.slice(0, best).map((x) => x.tok).join(' ').length;
+        if (Math.abs(left - full.length / 2) < Math.abs(bl - full.length / 2)) best = k;
+      }
+      brk = best;
+    }
+    ws.forEach((x, k) => {
+      const shown = ws.slice(0, k + 1).map((y, j) => (j === brk ? '\n' : j > 0 ? ' ' : '') + y.tok).join('');
+      keys.push(key(f(x.w.start) - 2, shown, 'hold'));
+    });
+    const last = ch[g[g.length - 1]];
+    const nextG = CAPTION_GROUPS[gi + 1];
+    const tEnd = nextG ? Math.min(last.end + 0.5, ch[nextG[0]].start - 0.02) : last.end + 0.5;
+    keys.push(key(f(tEnd), '', 'hold'));
+    band.push(key(f(ws[0].w.start) - 2, 100, 'hold'), key(f(tEnd), 0, 'hold'));
+  });
+  const y = H - 150 - 112;
+  return [
+    {kind: 'shape', name: 'caption band', items: [rect(0, y - 70, W, 150, BG, 60)], transform: {opacity: {keys: band}}, label: 16},
+    {kind: 'text', name: 'captions', source: {kind: 'keyed', keys}, font: FONT.sg800, size: 50, color: TXT, justify: 'center', leading: 60, transform: {position: [W / 2, y]}, label: 16},
+  ];
 }
 
 /** Layers parented to the CAMERA null (anchored at the screen centre) are offset by -centre. */
@@ -592,8 +712,8 @@ function shiftProp(p: Prop<Vec2> | undefined): Prop<Vec2> {
 /** SFX cue list (seconds): quiet UI taps, a whoosh on the sweep, a lock on the count. */
 export function sfxCues(): Array<{file: string; t: number; gainDb: number}> {
   return [
-    ...CHAOS.map((k) => ({file: 'tap.wav', t: k.t, gainDb: -30})),
-    ...PILLS.map(([, , t]) => ({file: 'tap.wav', t, gainDb: -33})),
+    ...chaos().map((k) => ({file: 'tap.wav', t: k.t, gainDb: -30})),
+    ...pills().map(([, , t]) => ({file: 'tap.wav', t, gainDb: -33})),
     {file: 'whoosh.wav', t: SWEEP.t0 + 0.4, gainDb: -30},
     ...STEP.map((s) => ({file: 'tap.wav', t: s.t - 0.1, gainDb: -28})),
     {file: 'lock.wav', t: T.years + 1.6, gainDb: -24},

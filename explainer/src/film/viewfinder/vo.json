@@ -1,0 +1,579 @@
+{
+ "offset": 1.0,
+ "vo_duration": 22.43,
+ "chunks": [
+  {
+   "text": "One brief",
+   "punct": ".",
+   "start": 1.01,
+   "end": 1.86
+  },
+  {
+   "text": "One lens",
+   "punct": ".",
+   "start": 2.11,
+   "end": 2.92
+  },
+  {
+   "text": "Frame it",
+   "punct": ":",
+   "start": 3.47,
+   "end": 4.08
+  },
+  {
+   "text": "the plan",
+   "punct": ",",
+   "start": 4.23,
+   "end": 4.79
+  },
+  {
+   "text": "the crew",
+   "punct": ",",
+   "start": 4.91,
+   "end": 5.45
+  },
+  {
+   "text": "the locations",
+   "punct": ".",
+   "start": 5.57,
+   "end": 6.49
+  },
+  {
+   "text": "Roll it",
+   "punct": ".",
+   "start": 7.04,
+   "end": 7.65
+  },
+  {
+   "text": "We shoot it on set",
+   "punct": ".",
+   "start": 7.8,
+   "end": 9.05
+  },
+  {
+   "text": "Cut it",
+   "punct": ".",
+   "start": 9.6,
+   "end": 10.1
+  },
+  {
+   "text": "Animate it",
+   "punct": ".",
+   "start": 10.25,
+   "end": 10.98
+  },
+  {
+   "text": "Sound it",
+   "punct": ".",
+   "start": 11.13,
+   "end": 11.85
+  },
+  {
+   "text": "Then ship it",
+   "punct": ",",
+   "start": 12.4,
+   "end": 13.42
+  },
+  {
+   "text": "to every screen",
+   "punct": ".",
+   "start": 13.54,
+   "end": 14.7
+  },
+  {
+   "text": "Thirteen years of UK production",
+   "punct": ".",
+   "start": 15.3,
+   "end": 17.57
+  },
+  {
+   "text": "Vogue Arabia",
+   "punct": ".",
+   "start": 17.82,
+   "end": 18.79
+  },
+  {
+   "text": "Adidas",
+   "punct": ".",
+   "start": 18.94,
+   "end": 19.61
+  },
+  {
+   "text": "ASOS",
+   "punct": ".",
+   "start": 19.76,
+   "end": 20.4
+  },
+  {
+   "text": "Onemarsmedia",
+   "punct": ".",
+   "start": 21.05,
+   "end": 22.13
+  },
+  {
+   "text": "That's a wrap",
+   "punct": ".",
+   "start": 22.53,
+   "end": 23.37
+  }
+ ],
+ "words": [
+  {
+   "text": "One",
+   "start": 1.01,
+   "end": 1.28,
+   "syllables": [
+    1.12
+   ],
+   "chunk": 0,
+   "snapped": true
+  },
+  {
+   "text": "brief",
+   "start": 1.28,
+   "end": 1.86,
+   "syllables": [
+    1.44
+   ],
+   "chunk": 0,
+   "snapped": true
+  },
+  {
+   "text": "One",
+   "start": 2.11,
+   "end": 2.33,
+   "syllables": [
+    2.21
+   ],
+   "chunk": 1,
+   "snapped": true
+  },
+  {
+   "text": "lens",
+   "start": 2.33,
+   "end": 2.92,
+   "syllables": [
+    2.45
+   ],
+   "chunk": 1,
+   "snapped": true
+  },
+  {
+   "text": "Frame",
+   "start": 3.47,
+   "end": 3.775,
+   "syllables": [
+    3.623
+   ],
+   "chunk": 2,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 3.775,
+   "end": 4.08,
+   "syllables": [
+    3.927
+   ],
+   "chunk": 2,
+   "snapped": false
+  },
+  {
+   "text": "the",
+   "start": 4.23,
+   "end": 4.35,
+   "syllables": [
+    4.25
+   ],
+   "chunk": 3,
+   "snapped": true
+  },
+  {
+   "text": "plan",
+   "start": 4.35,
+   "end": 4.79,
+   "syllables": [
+    4.45
+   ],
+   "chunk": 3,
+   "snapped": true
+  },
+  {
+   "text": "the",
+   "start": 4.91,
+   "end": 5.05,
+   "syllables": [
+    4.93
+   ],
+   "chunk": 4,
+   "snapped": true
+  },
+  {
+   "text": "crew",
+   "start": 5.05,
+   "end": 5.45,
+   "syllables": [
+    5.17
+   ],
+   "chunk": 4,
+   "snapped": true
+  },
+  {
+   "text": "the",
+   "start": 5.57,
+   "end": 5.665,
+   "syllables": [
+    5.61
+   ],
+   "chunk": 5,
+   "snapped": true
+  },
+  {
+   "text": "locations",
+   "start": 5.665,
+   "end": 6.49,
+   "syllables": [
+    5.72,
+    5.84,
+    5.94
+   ],
+   "chunk": 5,
+   "snapped": true
+  },
+  {
+   "text": "Roll",
+   "start": 7.04,
+   "end": 7.345,
+   "syllables": [
+    7.192
+   ],
+   "chunk": 6,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 7.345,
+   "end": 7.65,
+   "syllables": [
+    7.498
+   ],
+   "chunk": 6,
+   "snapped": false
+  },
+  {
+   "text": "We",
+   "start": 7.8,
+   "end": 8.05,
+   "syllables": [
+    7.925
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "shoot",
+   "start": 8.05,
+   "end": 8.3,
+   "syllables": [
+    8.175
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 8.3,
+   "end": 8.55,
+   "syllables": [
+    8.425
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "on",
+   "start": 8.55,
+   "end": 8.8,
+   "syllables": [
+    8.675
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "set",
+   "start": 8.8,
+   "end": 9.05,
+   "syllables": [
+    8.925
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "Cut",
+   "start": 9.6,
+   "end": 9.85,
+   "syllables": [
+    9.725
+   ],
+   "chunk": 8,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 9.85,
+   "end": 10.1,
+   "syllables": [
+    9.975
+   ],
+   "chunk": 8,
+   "snapped": false
+  },
+  {
+   "text": "Animate",
+   "start": 10.25,
+   "end": 10.797,
+   "syllables": [
+    10.341,
+    10.524,
+    10.706
+   ],
+   "chunk": 9,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 10.797,
+   "end": 10.98,
+   "syllables": [
+    10.889
+   ],
+   "chunk": 9,
+   "snapped": false
+  },
+  {
+   "text": "Sound",
+   "start": 11.13,
+   "end": 11.475,
+   "syllables": [
+    11.34
+   ],
+   "chunk": 10,
+   "snapped": true
+  },
+  {
+   "text": "it",
+   "start": 11.475,
+   "end": 11.85,
+   "syllables": [
+    11.61
+   ],
+   "chunk": 10,
+   "snapped": true
+  },
+  {
+   "text": "Then",
+   "start": 12.4,
+   "end": 12.74,
+   "syllables": [
+    12.57
+   ],
+   "chunk": 11,
+   "snapped": false
+  },
+  {
+   "text": "ship",
+   "start": 12.74,
+   "end": 13.08,
+   "syllables": [
+    12.91
+   ],
+   "chunk": 11,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 13.08,
+   "end": 13.42,
+   "syllables": [
+    13.25
+   ],
+   "chunk": 11,
+   "snapped": false
+  },
+  {
+   "text": "to",
+   "start": 13.54,
+   "end": 13.745,
+   "syllables": [
+    13.62
+   ],
+   "chunk": 12,
+   "snapped": true
+  },
+  {
+   "text": "every",
+   "start": 13.745,
+   "end": 14.215,
+   "syllables": [
+    13.87,
+    14.06
+   ],
+   "chunk": 12,
+   "snapped": true
+  },
+  {
+   "text": "screen",
+   "start": 14.215,
+   "end": 14.7,
+   "syllables": [
+    14.37
+   ],
+   "chunk": 12,
+   "snapped": true
+  },
+  {
+   "text": "Thirteen",
+   "start": 15.3,
+   "end": 15.867,
+   "syllables": [
+    15.442,
+    15.726
+   ],
+   "chunk": 13,
+   "snapped": false
+  },
+  {
+   "text": "years",
+   "start": 15.867,
+   "end": 16.151,
+   "syllables": [
+    16.009
+   ],
+   "chunk": 13,
+   "snapped": false
+  },
+  {
+   "text": "of",
+   "start": 16.151,
+   "end": 16.435,
+   "syllables": [
+    16.293
+   ],
+   "chunk": 13,
+   "snapped": false
+  },
+  {
+   "text": "UK",
+   "start": 16.435,
+   "end": 16.719,
+   "syllables": [
+    16.577
+   ],
+   "chunk": 13,
+   "snapped": false
+  },
+  {
+   "text": "production",
+   "start": 16.719,
+   "end": 17.57,
+   "syllables": [
+    16.861,
+    17.144,
+    17.428
+   ],
+   "chunk": 13,
+   "snapped": false
+  },
+  {
+   "text": "Vogue",
+   "start": 17.82,
+   "end": 18.063,
+   "syllables": [
+    17.941
+   ],
+   "chunk": 14,
+   "snapped": false
+  },
+  {
+   "text": "Arabia",
+   "start": 18.063,
+   "end": 18.79,
+   "syllables": [
+    18.184,
+    18.426,
+    18.669
+   ],
+   "chunk": 14,
+   "snapped": false
+  },
+  {
+   "text": "Adidas",
+   "start": 18.94,
+   "end": 19.61,
+   "syllables": [
+    18.98,
+    19.12,
+    19.23
+   ],
+   "chunk": 15,
+   "snapped": true
+  },
+  {
+   "text": "ASOS",
+   "start": 19.76,
+   "end": 20.4,
+   "syllables": [
+    19.92,
+    20.24
+   ],
+   "chunk": 16,
+   "snapped": false
+  },
+  {
+   "text": "Onemarsmedia",
+   "start": 21.05,
+   "end": 22.13,
+   "syllables": [
+    21.158,
+    21.374,
+    21.59,
+    21.806,
+    22.022
+   ],
+   "chunk": 17,
+   "snapped": false
+  },
+  {
+   "text": "That's",
+   "start": 22.53,
+   "end": 22.77,
+   "syllables": [
+    22.66
+   ],
+   "chunk": 18,
+   "snapped": true
+  },
+  {
+   "text": "a",
+   "start": 22.77,
+   "end": 22.945,
+   "syllables": [
+    22.88
+   ],
+   "chunk": 18,
+   "snapped": true
+  },
+  {
+   "text": "wrap",
+   "start": 22.945,
+   "end": 23.37,
+   "syllables": [
+    23.01
+   ],
+   "chunk": 18,
+   "snapped": true
+  }
+ ]
+}

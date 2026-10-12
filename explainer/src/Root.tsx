@@ -35,6 +35,7 @@ const reelCover = buildReelCoverScene();
 const reelFrame = buildReelFrameScene();
 const reelCoverDark = buildReelCoverDarkScene();
 const oneLine = buildOneLineScene();
+const oneLineV = buildOneLineScene(true);
 const timeline = buildTimelineScene();
 const action = buildActionScene();
 const testMain = test.comps[test.main];
@@ -60,6 +61,7 @@ export const Root: React.FC = () => (
       defaultProps={{scene: film}}
     />
     <Composition id="OneLine" component={SceneComp} durationInFrames={oneLine.comps[oneLine.main].duration} fps={60} width={1920} height={1080} defaultProps={{scene: oneLine}} />
+    <Composition id="OneLine9x16" component={SceneComp} durationInFrames={oneLineV.comps[oneLineV.main].duration} fps={60} width={1080} height={1920} defaultProps={{scene: oneLineV}} />
     <Composition id="Timeline" component={SceneComp} durationInFrames={timeline.comps[timeline.main].duration} fps={60} width={1920} height={1080} defaultProps={{scene: timeline}} />
     <Composition id="ActionTaker" component={SceneComp} durationInFrames={action.comps[action.main].duration} fps={60} width={1080} height={1920} defaultProps={{scene: action}} />
     <Composition id="TilesAnim" component={SceneComp} durationInFrames={tilesAnim.comps[tilesAnim.main].duration} fps={60} width={1920} height={1080} defaultProps={{scene: tilesAnim}} />
