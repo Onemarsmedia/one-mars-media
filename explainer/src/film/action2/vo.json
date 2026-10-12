@@ -1,0 +1,466 @@
+{
+ "offset": 1.2,
+ "vo_duration": 19.03,
+ "chunks": [
+  {
+   "text": "Some people polish version forty-seven",
+   "punct": ".",
+   "start": 1.22,
+   "end": 3.48
+  },
+  {
+   "text": "Some people ship",
+   "punct": ".",
+   "start": 4.03,
+   "end": 5.1
+  },
+  {
+   "text": "We plan it",
+   "punct": ".",
+   "start": 5.85,
+   "end": 6.59
+  },
+  {
+   "text": "Shoot it",
+   "punct": ".",
+   "start": 6.79,
+   "end": 7.39
+  },
+  {
+   "text": "Cut it",
+   "punct": ".",
+   "start": 7.59,
+   "end": 8.09
+  },
+  {
+   "text": "Animate it",
+   "punct": ".",
+   "start": 8.29,
+   "end": 9.03
+  },
+  {
+   "text": "And put it out",
+   "punct": ".",
+   "start": 9.23,
+   "end": 10.19
+  },
+  {
+   "text": "Thirteen years of UK production",
+   "punct": ".",
+   "start": 11.09,
+   "end": 13.22
+  },
+  {
+   "text": "Vogue Arabia",
+   "punct": ".",
+   "start": 13.47,
+   "end": 14.42
+  },
+  {
+   "text": "Adidas",
+   "punct": ".",
+   "start": 14.57,
+   "end": 15.21
+  },
+  {
+   "text": "ASOS",
+   "punct": ".",
+   "start": 15.36,
+   "end": 15.97
+  },
+  {
+   "text": "Stop polishing",
+   "punct": ".",
+   "start": 16.67,
+   "end": 17.63
+  },
+  {
+   "text": "Start shipping",
+   "punct": ".",
+   "start": 17.78,
+   "end": 18.71
+  },
+  {
+   "text": "Onemarsmedia",
+   "punct": ".",
+   "start": 19.16,
+   "end": 20.17
+  }
+ ],
+ "words": [
+  {
+   "text": "Some",
+   "start": 1.22,
+   "end": 1.425,
+   "syllables": [
+    1.323
+   ],
+   "chunk": 0,
+   "snapped": false
+  },
+  {
+   "text": "people",
+   "start": 1.425,
+   "end": 1.836,
+   "syllables": [
+    1.528,
+    1.734
+   ],
+   "chunk": 0,
+   "snapped": false
+  },
+  {
+   "text": "polish",
+   "start": 1.836,
+   "end": 2.247,
+   "syllables": [
+    1.939,
+    2.145
+   ],
+   "chunk": 0,
+   "snapped": false
+  },
+  {
+   "text": "version",
+   "start": 2.247,
+   "end": 2.658,
+   "syllables": [
+    2.35,
+    2.555
+   ],
+   "chunk": 0,
+   "snapped": false
+  },
+  {
+   "text": "forty-seven",
+   "start": 2.658,
+   "end": 3.48,
+   "syllables": [
+    2.761,
+    2.966,
+    3.172,
+    3.377
+   ],
+   "chunk": 0,
+   "snapped": false
+  },
+  {
+   "text": "Some",
+   "start": 4.03,
+   "end": 4.26,
+   "syllables": [
+    4.17
+   ],
+   "chunk": 1,
+   "snapped": true
+  },
+  {
+   "text": "people",
+   "start": 4.26,
+   "end": 4.655,
+   "syllables": [
+    4.35,
+    4.51
+   ],
+   "chunk": 1,
+   "snapped": true
+  },
+  {
+   "text": "ship",
+   "start": 4.655,
+   "end": 5.1,
+   "syllables": [
+    4.8
+   ],
+   "chunk": 1,
+   "snapped": true
+  },
+  {
+   "text": "We",
+   "start": 5.85,
+   "end": 6.065,
+   "syllables": [
+    5.92
+   ],
+   "chunk": 2,
+   "snapped": true
+  },
+  {
+   "text": "plan",
+   "start": 6.065,
+   "end": 6.28,
+   "syllables": [
+    6.21
+   ],
+   "chunk": 2,
+   "snapped": true
+  },
+  {
+   "text": "it",
+   "start": 6.28,
+   "end": 6.59,
+   "syllables": [
+    6.35
+   ],
+   "chunk": 2,
+   "snapped": true
+  },
+  {
+   "text": "Shoot",
+   "start": 6.79,
+   "end": 7.08,
+   "syllables": [
+    6.98
+   ],
+   "chunk": 3,
+   "snapped": true
+  },
+  {
+   "text": "it",
+   "start": 7.08,
+   "end": 7.39,
+   "syllables": [
+    7.18
+   ],
+   "chunk": 3,
+   "snapped": true
+  },
+  {
+   "text": "Cut",
+   "start": 7.59,
+   "end": 7.77,
+   "syllables": [
+    7.68
+   ],
+   "chunk": 4,
+   "snapped": true
+  },
+  {
+   "text": "it",
+   "start": 7.77,
+   "end": 8.09,
+   "syllables": [
+    7.86
+   ],
+   "chunk": 4,
+   "snapped": true
+  },
+  {
+   "text": "Animate",
+   "start": 8.29,
+   "end": 8.675,
+   "syllables": [
+    8.33,
+    8.44,
+    8.55
+   ],
+   "chunk": 5,
+   "snapped": true
+  },
+  {
+   "text": "it",
+   "start": 8.675,
+   "end": 9.03,
+   "syllables": [
+    8.8
+   ],
+   "chunk": 5,
+   "snapped": true
+  },
+  {
+   "text": "And",
+   "start": 9.23,
+   "end": 9.47,
+   "syllables": [
+    9.35
+   ],
+   "chunk": 6,
+   "snapped": false
+  },
+  {
+   "text": "put",
+   "start": 9.47,
+   "end": 9.71,
+   "syllables": [
+    9.59
+   ],
+   "chunk": 6,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 9.71,
+   "end": 9.95,
+   "syllables": [
+    9.83
+   ],
+   "chunk": 6,
+   "snapped": false
+  },
+  {
+   "text": "out",
+   "start": 9.95,
+   "end": 10.19,
+   "syllables": [
+    10.07
+   ],
+   "chunk": 6,
+   "snapped": false
+  },
+  {
+   "text": "Thirteen",
+   "start": 11.09,
+   "end": 11.623,
+   "syllables": [
+    11.223,
+    11.489
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "years",
+   "start": 11.623,
+   "end": 11.889,
+   "syllables": [
+    11.756
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "of",
+   "start": 11.889,
+   "end": 12.155,
+   "syllables": [
+    12.022
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "UK",
+   "start": 12.155,
+   "end": 12.421,
+   "syllables": [
+    12.288
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "production",
+   "start": 12.421,
+   "end": 13.22,
+   "syllables": [
+    12.554,
+    12.821,
+    13.087
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "Vogue",
+   "start": 13.47,
+   "end": 13.708,
+   "syllables": [
+    13.589
+   ],
+   "chunk": 8,
+   "snapped": false
+  },
+  {
+   "text": "Arabia",
+   "start": 13.708,
+   "end": 14.42,
+   "syllables": [
+    13.826,
+    14.064,
+    14.301
+   ],
+   "chunk": 8,
+   "snapped": false
+  },
+  {
+   "text": "Adidas",
+   "start": 14.57,
+   "end": 15.21,
+   "syllables": [
+    14.677,
+    14.89,
+    15.103
+   ],
+   "chunk": 9,
+   "snapped": false
+  },
+  {
+   "text": "ASOS",
+   "start": 15.36,
+   "end": 15.97,
+   "syllables": [
+    15.4,
+    15.64
+   ],
+   "chunk": 10,
+   "snapped": true
+  },
+  {
+   "text": "Stop",
+   "start": 16.67,
+   "end": 16.91,
+   "syllables": [
+    16.79
+   ],
+   "chunk": 11,
+   "snapped": false
+  },
+  {
+   "text": "polishing",
+   "start": 16.91,
+   "end": 17.63,
+   "syllables": [
+    17.03,
+    17.27,
+    17.51
+   ],
+   "chunk": 11,
+   "snapped": false
+  },
+  {
+   "text": "Start",
+   "start": 17.78,
+   "end": 18.09,
+   "syllables": [
+    17.935
+   ],
+   "chunk": 12,
+   "snapped": false
+  },
+  {
+   "text": "shipping",
+   "start": 18.09,
+   "end": 18.71,
+   "syllables": [
+    18.245,
+    18.555
+   ],
+   "chunk": 12,
+   "snapped": false
+  },
+  {
+   "text": "Onemarsmedia",
+   "start": 19.16,
+   "end": 20.17,
+   "syllables": [
+    19.261,
+    19.463,
+    19.665,
+    19.867,
+    20.069
+   ],
+   "chunk": 13,
+   "snapped": false
+  }
+ ]
+}

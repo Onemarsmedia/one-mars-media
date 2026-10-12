@@ -252,6 +252,8 @@ class Emitter {
         return `"solid", ${jsStr(l.name)}, ${lit(hexToRgb01(l.color))}`;
       case 'precomp':
         return `"precomp", ${jsStr(l.name)}, COMPS[${jsStr(l.comp)}]`;
+      case 'image':
+        return `"image", ${jsStr(l.name)}, ${jsStr(l.file)}`;
     }
   }
 
@@ -497,7 +499,7 @@ var COMPS = {};
 var MISSING_FONTS = [];
 var MISSING_AUDIO = [];
 var BUILT = false;
-var ROOT_FOLDER = null, MAIN_FOLDER = null, PRECOMP_FOLDER = null, AUDIO_FOLDER = null;
+var ROOT_FOLDER = null, MAIN_FOLDER = null, PRECOMP_FOLDER = null, AUDIO_FOLDER = null, FOOTAGE_FOLDER = null;
 
 var IT = {L: KeyframeInterpolationType.LINEAR, B: KeyframeInterpolationType.BEZIER, H: KeyframeInterpolationType.HOLD};
 
@@ -537,6 +539,7 @@ function mkLayer(comp, kind, name, extra) {
   else if (kind === "null") l = comp.layers.addNull();
   else if (kind === "solid") l = comp.layers.addSolid(extra, name, comp.width, comp.height, 1);
   else if (kind === "precomp") l = comp.layers.add(extra);
+  else if (kind === "image") l = comp.layers.add(importFootage(extra));
   l.name = name;
   return l;
 }
@@ -721,6 +724,14 @@ function addMarker(comp, t, label, dur) {
   var mv = new MarkerValue(label);
   if (dur > 0) mv.duration = dur;
   comp.markerProperty.setValueAtTime(t, mv);
+}
+function importFootage(file) {
+  var f = new File(SCRIPT_DIR.fsName + "/" + file);
+  if (!f.exists) throw new Error("Image not found next to the script: " + file);
+  if (!FOOTAGE_FOLDER) { FOOTAGE_FOLDER = app.project.items.addFolder("Footage"); FOOTAGE_FOLDER.parentFolder = ROOT_FOLDER; }
+  var item = app.project.importFile(new ImportOptions(f));
+  item.parentFolder = FOOTAGE_FOLDER;
+  return item;
 }
 function addAudio(comp, file, name, start, gainDb, on) {
   var f = new File(SCRIPT_DIR.fsName + "/audio/" + file);

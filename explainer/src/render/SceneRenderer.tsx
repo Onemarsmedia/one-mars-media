@@ -1,4 +1,5 @@
 import React from 'react';
+import {staticFile} from 'remotion';
 import {compLinkCtx, evalColor, evalNumber, evalVec2, type LinkCtx} from '../scene/eval';
 import {textAt} from '../scene/text';
 import type {Comp, Effect, Geometry, Layer, PathData, Scene, ShapeItem, Stroke, TextLayer, Trim} from '../scene/types';
@@ -194,6 +195,8 @@ function LayerContent({scene, comp, layer, t}: {scene: Scene; comp: Comp; layer:
       if (layer.collapse) return content;
       return <ClippedPrecomp w={sub.width} h={sub.height}>{content}</ClippedPrecomp>;
     }
+    case 'image':
+      return <image href={staticFile(layer.file)} x={0} y={0} width={layer.width} height={layer.height} preserveAspectRatio="none" />;
     case 'null':
       return null;
   }

@@ -207,7 +207,16 @@ export interface PrecompLayer extends LayerBase {
   collapse?: boolean;
 }
 
-export type Layer = ShapeLayer | TextLayer | NullLayer | SolidLayer | PrecompLayer;
+/** A still image (footage). Drawn from [0, 0] to [width, height] in layer space, like a solid. */
+export interface ImageLayer extends LayerBase {
+  kind: 'image';
+  /** Path relative to public/ (Remotion staticFile); the AE package ships it next to the script. */
+  file: string;
+  width: number;
+  height: number;
+}
+
+export type Layer = ShapeLayer | TextLayer | NullLayer | SolidLayer | PrecompLayer | ImageLayer;
 
 export interface Marker {
   t: number;
