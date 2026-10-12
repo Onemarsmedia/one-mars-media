@@ -1,0 +1,384 @@
+{
+ "offset": 0.4286,
+ "vo_duration": 18.683,
+ "chunks": [
+  {
+   "text": "Version forty-seven",
+   "punct": ".",
+   "start": 0.449,
+   "end": 1.749
+  },
+  {
+   "text": "Still not posted",
+   "punct": ".",
+   "start": 1.949,
+   "end": 3.069
+  },
+  {
+   "text": "Meanwhile",
+   "punct": ",",
+   "start": 3.449,
+   "end": 4.039
+  },
+  {
+   "text": "we planned it",
+   "punct": ".",
+   "start": 4.159,
+   "end": 4.859
+  },
+  {
+   "text": "Shot it",
+   "punct": ".",
+   "start": 5.016,
+   "end": 5.616
+  },
+  {
+   "text": "Cut it",
+   "punct": ".",
+   "start": 5.873,
+   "end": 6.383
+  },
+  {
+   "text": "Dropped it",
+   "punct": ".",
+   "start": 6.516,
+   "end": 7.116
+  },
+  {
+   "text": "Thirteen years",
+   "punct": ".",
+   "start": 10.373,
+   "end": 11.643
+  },
+  {
+   "text": "Vogue Arabia",
+   "punct": ".",
+   "start": 11.873,
+   "end": 12.703
+  },
+  {
+   "text": "Adidas",
+   "punct": ".",
+   "start": 12.944,
+   "end": 13.574
+  },
+  {
+   "text": "ASOS",
+   "punct": ".",
+   "start": 13.801,
+   "end": 14.401
+  },
+  {
+   "text": "Stop overthinking",
+   "punct": ".",
+   "start": 15.516,
+   "end": 16.736
+  },
+  {
+   "text": "Post the thing",
+   "punct": ".",
+   "start": 16.856,
+   "end": 17.706
+  },
+  {
+   "text": "Onemarsmedia",
+   "punct": ".",
+   "start": 18.141,
+   "end": 19.051
+  }
+ ],
+ "words": [
+  {
+   "text": "Version",
+   "start": 0.449,
+   "end": 0.882,
+   "syllables": [
+    0.557,
+    0.774
+   ],
+   "chunk": 0,
+   "snapped": false
+  },
+  {
+   "text": "forty-seven",
+   "start": 0.882,
+   "end": 1.749,
+   "syllables": [
+    0.991,
+    1.207,
+    1.424,
+    1.641
+   ],
+   "chunk": 0,
+   "snapped": false
+  },
+  {
+   "text": "Still",
+   "start": 1.949,
+   "end": 2.299,
+   "syllables": [
+    2.209
+   ],
+   "chunk": 1,
+   "snapped": true
+  },
+  {
+   "text": "not",
+   "start": 2.299,
+   "end": 2.514,
+   "syllables": [
+    2.389
+   ],
+   "chunk": 1,
+   "snapped": true
+  },
+  {
+   "text": "posted",
+   "start": 2.514,
+   "end": 3.069,
+   "syllables": [
+    2.639,
+    2.879
+   ],
+   "chunk": 1,
+   "snapped": true
+  },
+  {
+   "text": "Meanwhile",
+   "start": 3.449,
+   "end": 4.039,
+   "syllables": [
+    3.499,
+    3.689,
+    3.879
+   ],
+   "chunk": 2,
+   "snapped": true
+  },
+  {
+   "text": "we",
+   "start": 4.159,
+   "end": 4.334,
+   "syllables": [
+    4.247
+   ],
+   "chunk": 3,
+   "snapped": false
+  },
+  {
+   "text": "planned",
+   "start": 4.334,
+   "end": 4.684,
+   "syllables": [
+    4.422,
+    4.597
+   ],
+   "chunk": 3,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 4.684,
+   "end": 4.859,
+   "syllables": [
+    4.771
+   ],
+   "chunk": 3,
+   "snapped": false
+  },
+  {
+   "text": "Shot",
+   "start": 5.016,
+   "end": 5.276,
+   "syllables": [
+    5.176
+   ],
+   "chunk": 4,
+   "snapped": true
+  },
+  {
+   "text": "it",
+   "start": 5.276,
+   "end": 5.616,
+   "syllables": [
+    5.376
+   ],
+   "chunk": 4,
+   "snapped": true
+  },
+  {
+   "text": "Cut",
+   "start": 5.873,
+   "end": 6.068,
+   "syllables": [
+    5.973
+   ],
+   "chunk": 5,
+   "snapped": true
+  },
+  {
+   "text": "it",
+   "start": 6.068,
+   "end": 6.383,
+   "syllables": [
+    6.163
+   ],
+   "chunk": 5,
+   "snapped": true
+  },
+  {
+   "text": "Dropped",
+   "start": 6.516,
+   "end": 6.916,
+   "syllables": [
+    6.616,
+    6.816
+   ],
+   "chunk": 6,
+   "snapped": false
+  },
+  {
+   "text": "it",
+   "start": 6.916,
+   "end": 7.116,
+   "syllables": [
+    7.016
+   ],
+   "chunk": 6,
+   "snapped": false
+  },
+  {
+   "text": "Thirteen",
+   "start": 10.373,
+   "end": 11.22,
+   "syllables": [
+    10.585,
+    11.008
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "years",
+   "start": 11.22,
+   "end": 11.643,
+   "syllables": [
+    11.431
+   ],
+   "chunk": 7,
+   "snapped": false
+  },
+  {
+   "text": "Vogue",
+   "start": 11.873,
+   "end": 12.128,
+   "syllables": [
+    12.063
+   ],
+   "chunk": 8,
+   "snapped": true
+  },
+  {
+   "text": "Arabia",
+   "start": 12.128,
+   "end": 12.703,
+   "syllables": [
+    12.193,
+    12.313,
+    12.543
+   ],
+   "chunk": 8,
+   "snapped": true
+  },
+  {
+   "text": "Adidas",
+   "start": 12.944,
+   "end": 13.574,
+   "syllables": [
+    13.014,
+    13.124,
+    13.234
+   ],
+   "chunk": 9,
+   "snapped": true
+  },
+  {
+   "text": "ASOS",
+   "start": 13.801,
+   "end": 14.401,
+   "syllables": [
+    13.871,
+    14.081
+   ],
+   "chunk": 10,
+   "snapped": true
+  },
+  {
+   "text": "Stop",
+   "start": 15.516,
+   "end": 15.786,
+   "syllables": [
+    15.696
+   ],
+   "chunk": 11,
+   "snapped": true
+  },
+  {
+   "text": "overthinking",
+   "start": 15.786,
+   "end": 16.736,
+   "syllables": [
+    15.876,
+    16.026,
+    16.206,
+    16.456
+   ],
+   "chunk": 11,
+   "snapped": true
+  },
+  {
+   "text": "Post",
+   "start": 16.856,
+   "end": 17.116,
+   "syllables": [
+    16.966
+   ],
+   "chunk": 12,
+   "snapped": true
+  },
+  {
+   "text": "the",
+   "start": 17.116,
+   "end": 17.351,
+   "syllables": [
+    17.266
+   ],
+   "chunk": 12,
+   "snapped": true
+  },
+  {
+   "text": "thing",
+   "start": 17.351,
+   "end": 17.706,
+   "syllables": [
+    17.436
+   ],
+   "chunk": 12,
+   "snapped": true
+  },
+  {
+   "text": "Onemarsmedia",
+   "start": 18.141,
+   "end": 19.051,
+   "syllables": [
+    18.232,
+    18.414,
+    18.596,
+    18.778,
+    18.96
+   ],
+   "chunk": 13,
+   "snapped": false
+  }
+ ]
+}
