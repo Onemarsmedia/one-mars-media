@@ -9,6 +9,7 @@ import {buildTimelineScene} from './film/timeline/film';
 import {buildActionScene} from './film/action/film';
 import {buildAction2Scene} from './film/action2/film';
 import {buildAction3Scene} from './film/action3/film';
+import {buildAction4Scene} from './film/action4/film';
 import {loadFonts} from './fonts';
 import {MotionBlur} from './render/MotionBlur';
 import {SceneFrame} from './render/SceneRenderer';
@@ -58,6 +59,7 @@ const timeline = buildTimelineScene();
 const action = buildActionScene();
 const action2 = buildAction2Scene();
 const action3 = buildAction3Scene();
+const action4 = buildAction4Scene();
 const testMain = test.comps[test.main];
 
 export const Root: React.FC = () => (
@@ -86,6 +88,7 @@ export const Root: React.FC = () => (
     <Composition id="ActionTaker" component={SceneComp} durationInFrames={action.comps[action.main].duration} fps={60} width={1080} height={1920} defaultProps={{scene: action}} />
     <Composition id="ActionTakerV2" component={SceneComp} durationInFrames={action2.comps[action2.main].duration} fps={60} width={1080} height={1920} defaultProps={{scene: action2}} />
     <Composition id="ActionTakerV3" component={SceneComp} durationInFrames={action3.comps[action3.main].duration} fps={60} width={1080} height={1920} defaultProps={{scene: action3}} />
+    <Composition id="ActionTakerV4" component={SceneComp} durationInFrames={action4.comps[action4.main].duration} fps={60} width={1080} height={1920} defaultProps={{scene: action4}} />
     <Composition id="TilesAnim" component={SceneComp} durationInFrames={tilesAnim.comps[tilesAnim.main].duration} fps={60} width={1920} height={1080} defaultProps={{scene: tilesAnim}} />
     <Composition id="ReelCover" component={SceneComp} durationInFrames={reelCover.comps[reelCover.main].duration} fps={60} width={COVER.w} height={COVER.h} defaultProps={{scene: reelCover}} />
     <Composition id="ReelCoverDark" component={SceneComp} durationInFrames={reelCoverDark.comps[reelCoverDark.main].duration} fps={60} width={COVER.w} height={COVER.h} defaultProps={{scene: reelCoverDark}} />

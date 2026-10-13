@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Own modern beat (no licences): 808 kick + sliding sub, claps, trap hats with rolls, a riser, impacts.
 Usage: python3 -I beat.py out.wav cues.json
-cues.json: {"duration": s, "bpm": 140, "drop": s, "rollFrom": s, "rollTo": s, "breakdown": s, "impacts": [s, ...]}
+cues.json: {"duration": s, "bpm": 140, "origin": s (a downbeat, default 0), "drop": s, "rollFrom": s, "rollTo": s, "breakdown": s, "impacts": [s, ...]}
 Before the drop: a filtered pad, a clock tick on the 8ths and a riser into the drop.
 """
 import json
@@ -69,18 +69,24 @@ def pad(L, root, gain_lp=1.0):
 drop, bd = cfg['drop'], cfg['breakdown']
 roots = [220.0, 174.61, 261.63, 196.0]  # Am F C G
 riff = [43.65 * 1.26, 43.65, 43.65 * 1.498, 43.65 * 1.122]  # 808 notes per bar (A, F, C, G an octave down-ish)
-bars = int(np.ceil(dur / (4 * B)))
-for b in range(bars):
-    t0 = b * 4 * B
+O = cfg.get('origin', 0.0)  # the grid is anchored on this downbeat
+first_bar = -int(np.ceil(O / (4 * B)))
+bars = int(np.ceil((dur - O) / (4 * B)))
+for b in range(first_bar, bars):
+    t0 = O + b * 4 * B
+    if t0 + 4 * B <= 0:
+        continue
+    t0 = max(t0, 0.0)
     # pad everywhere, quieter after the drop
     add(pad(4 * B, roots[b % 4] / 2), t0, 0.22 if t0 < drop else 0.12, -0.2)
     add(pad(4 * B, roots[b % 4]), t0 + 0.01, 0.08 if t0 < drop else 0.05, 0.25)
-beats = int(dur / B) + 1
-for k in range(beats):
-    t = k * B
+for k in range(-int(np.ceil(O / B)), int((dur - O) / B) + 1):
+    t = O + k * B
+    if t < 0:
+        continue
     in_drop = drop - 1e-3 <= t < bd
     in_bd = bd - 1e-3 <= t < cfg['impacts'][-1]
-    note = riff[int(t / (4 * B)) % 4]
+    note = riff[int(np.floor((t - O) / (4 * B))) % 4]
     if t < drop - 1e-3:
         add(tick(), t, 0.10, 0.3)
         add(tick(), t + B / 2, 0.06, -0.3)
